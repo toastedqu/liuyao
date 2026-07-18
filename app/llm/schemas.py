@@ -1,0 +1,223 @@
+"""Structured LLM output schemas (implementation_plan.md §11.3).
+
+Every section of the断卦 result is expressed as one or more :class:`Judgement`
+objects so that :func:`iter_judgements` (and, in turn,
+``app.divination.validator``) can walk the whole tree generically instead of
+special-casing each section. Each ``Judgement`` must cite the ``fact_id``s
+and ``source_id``s (with verbatim quotes) that support it; ``line_assertions``
+make any claim about a specific line's 空/破/动/静/旺/衰/生/克 state an
+explicit, machine-checkable statement instead of free prose, which is what
+lets the validator catch a judgement that misstates a chart fact.
+"""
+
+from __future__ import annotations
+
+from enum import StrEnum
+from typing import Iterator, Literal
+
+from pydantic import BaseModel, ConfigDict, Field, model_validator
+
+
+class LineProperty(StrEnum):
+    """The line properties implementation_plan.md §12 explicitly guards.
+
+    ``KONG`` (空, 旬空), ``PO`` (破, 月破), ``DONG`` (动, 动爻), ``JING``
+    (静, 静爻), ``WANG`` (旺, 旺相), ``SHUAI`` (衰, 休囚), ``SHENG`` (生,
+    逢生/回头生), ``KE`` (克, 受克/回头克).
+    """
+
+    KONG = "空"
+    PO = "破"
+    DONG = "动"
+    JING = "静"
+    WANG = "旺"
+    SHUAI = "衰"
+    SHENG = "生"
+    KE = "克"
+
+
+class SourceCitation(BaseModel):
+    """A verbatim quote from one retrieved 《增删卜易》paragraph."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    source_id: str = Field(min_length=1, description="必须是本次检索结果中的 source_id")
+    quote: str = Field(min_length=1, description="从该出处逐字摘录的原文，禁止转述、增删或概括")
+
+
+class UsefulGodDecision(BaseModel):
+    """The model's source-backed classification of the question's useful god."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    category: Literal[
+        "天时",
+        "身命",
+        "求财",
+        "功名",
+        "婚姻",
+        "胎产",
+        "出行",
+        "行人",
+        "诉讼",
+        "疾病",
+        "家宅",
+        "茔葬",
+        "六亲",
+        "学业",
+        "其他",
+    ]
+    target: str = Field(
+        min_length=1,
+        max_length=100,
+        description="从所占之事中识别出的具体占问对象",
+    )
+    mode: Literal["world", "relative"] = Field(
+        description="问占者本人整体事项取 world；明确人物或事物六亲取 relative"
+    )
+    useful_relative: Literal["父母", "兄弟", "官鬼", "妻财", "子孙"] | None = None
+    rationale: str = Field(
+        min_length=1,
+        max_length=500,
+        description="仅说明如何从用户原话识别对象并据原文确定用神",
+    )
+    citations: list[SourceCitation] = Field(
+        min_length=1,
+        description="至少一条支持所选用神的逐字原文",
+    )
+
+    @model_validator(mode="after")
+    def validate_mode_and_relative(self) -> "UsefulGodDecision":
+        if self.mode == "world" and self.useful_relative is not None:
+            raise ValueError("mode=world 时 useful_relative 必须为 null")
+        if self.mode == "relative" and self.useful_relative is None:
+            raise ValueError("mode=relative 时必须给出 useful_relative")
+        return self
+
+
+class LineAssertion(BaseModel):
+    """An explicit, checkable claim about one line's chart-fact property."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    line: int = Field(ge=1, le=6, description="1=初爻 ... 6=上爻")
+    property: LineProperty
+    asserted: bool = Field(default=True, description="True=声称具有该属性；False=声称不具有")
+    fact_id: str | None = Field(default=None, description="支撑该声明的排盘事实ID，必须提供")
+
+
+class Judgement(BaseModel):
+    """One traceable statement backed by facts and/or original text."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    statement: str = Field(min_length=1, description="判断的中文表述")
+    fact_ids: list[str] = Field(default_factory=list)
+    citations: list[SourceCitation] = Field(default_factory=list)
+    line_assertions: list[LineAssertion] = Field(default_factory=list)
+
+
+class OverallConclusion(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    outlook: Literal["吉", "凶", "平", "不确定"]
+    summary: str = Field(min_length=1)
+    judgements: list[Judgement] = Field(default_factory=list)
+
+
+class UsefulGodAnalysis(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    useful_god: str = Field(min_length=1)
+    judgements: list[Judgement] = Field(default_factory=list)
+
+
+class MonthDayAnalysis(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    judgements: list[Judgement] = Field(default_factory=list)
+
+
+class MovingLinesAnalysis(BaseModel):
+    """动爻及元神/忌神分析。"""
+
+    model_config = ConfigDict(extra="forbid")
+
+    judgements: list[Judgement] = Field(default_factory=list)
+
+
+class SpecialPattern(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    name: str = Field(min_length=1, description="格局名称，须为《增删卜易》原书概念")
+    judgements: list[Judgement] = Field(default_factory=list)
+
+
+class SpecialPatternsAnalysis(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    patterns: list[SpecialPattern] = Field(default_factory=list)
+
+
+class TimingSelection(BaseModel):
+    """应期选择：只能从系统提供的候选中选择，不得自行编造。"""
+
+    model_config = ConfigDict(extra="forbid")
+
+    candidate_ids: list[str] = Field(default_factory=list, description="选中的应期候选ID")
+    judgements: list[Judgement] = Field(default_factory=list)
+    insufficient_evidence: bool = Field(
+        default=False,
+        description="证据不足时置真；此时 candidate_ids 必须为空，不得输出确定应期",
+    )
+
+
+class RiskItem(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    description: str = Field(min_length=1)
+    judgements: list[Judgement] = Field(default_factory=list)
+
+
+class RisksAndUncertainties(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    items: list[RiskItem] = Field(default_factory=list)
+
+
+class DivinationConclusion(BaseModel):
+    """The complete structured断卦 result the LLM must return."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    overall: OverallConclusion
+    useful_god: UsefulGodAnalysis
+    month_day: MonthDayAnalysis
+    moving_lines: MovingLinesAnalysis
+    special_patterns: SpecialPatternsAnalysis
+    timing: TimingSelection
+    risks: RisksAndUncertainties
+
+    def iter_judgements(self) -> Iterator[tuple[str, Judgement]]:
+        """Yield ``(path, judgement)`` for every judgement in the whole tree.
+
+        ``path`` is a stable, human-readable locator (e.g.
+        ``"special_patterns.patterns[0].judgements[1]"``) suitable for error
+        messages and for building a targeted correction prompt.
+        """
+        for i, judgement in enumerate(self.overall.judgements):
+            yield f"overall.judgements[{i}]", judgement
+        for i, judgement in enumerate(self.useful_god.judgements):
+            yield f"useful_god.judgements[{i}]", judgement
+        for i, judgement in enumerate(self.month_day.judgements):
+            yield f"month_day.judgements[{i}]", judgement
+        for i, judgement in enumerate(self.moving_lines.judgements):
+            yield f"moving_lines.judgements[{i}]", judgement
+        for pi, pattern in enumerate(self.special_patterns.patterns):
+            for i, judgement in enumerate(pattern.judgements):
+                yield f"special_patterns.patterns[{pi}].judgements[{i}]", judgement
+        for i, judgement in enumerate(self.timing.judgements):
+            yield f"timing.judgements[{i}]", judgement
+        for ri, item in enumerate(self.risks.items):
+            for i, judgement in enumerate(item.judgements):
+                yield f"risks.items[{ri}].judgements[{i}]", judgement

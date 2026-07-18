@@ -1,0 +1,2 @@
+"""Zengshan Buyi divination application."""
+

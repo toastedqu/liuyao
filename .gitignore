@@ -1,0 +1,10 @@
+__pycache__/
+*.py[cod]
+.coverage
+.env
+.pytest_cache/
+.ruff_cache/
+.venv/
+dist/
+data/generated/
+scrape_zengshan_buyi.py

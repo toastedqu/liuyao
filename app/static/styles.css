@@ -1,0 +1,137 @@
+:root {
+  color-scheme: light;
+  font-family: sans-serif;
+  line-height: 1.5;
+}
+
+body {
+  margin: 0;
+  color: #1f2328;
+  background: #fff;
+}
+
+main {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+form,
+fieldset {
+  display: grid;
+  gap: 10px;
+}
+
+form {
+  gap: 18px;
+}
+
+fieldset {
+  margin: 0;
+  padding: 14px;
+  border: 1px solid #8c959f;
+}
+
+textarea {
+  min-height: 80px;
+  resize: vertical;
+}
+
+input,
+select,
+textarea,
+button {
+  box-sizing: border-box;
+  padding: 7px;
+  font: inherit;
+}
+
+.inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.date-fields,
+.line-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.date-fields input {
+  width: 92px;
+}
+
+.line-row {
+  padding: 8px 0;
+  border-bottom: 1px solid #d0d7de;
+}
+
+.line-row:last-child {
+  border-bottom: 0;
+}
+
+button {
+  width: fit-content;
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: wait;
+}
+
+#error {
+  color: #cf222e;
+  white-space: pre-wrap;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 12px 0;
+}
+
+dl {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 6px 18px;
+}
+
+dt {
+  font-weight: 600;
+}
+
+dd {
+  margin: 0;
+}
+
+th,
+td {
+  padding: 7px;
+  border: 1px solid #8c959f;
+  text-align: left;
+  vertical-align: top;
+}
+
+pre {
+  overflow-x: auto;
+  padding: 12px;
+  border: 1px solid #d0d7de;
+  white-space: pre-wrap;
+}
+
+details {
+  margin: 8px 0;
+}
+
+blockquote {
+  margin: 8px 0 8px 18px;
+  padding-left: 12px;
+  border-left: 3px solid #8c959f;
+  white-space: pre-wrap;
+}
+
+#result {
+  margin-top: 28px;
+}

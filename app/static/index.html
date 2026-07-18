@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>《增删卜易》六爻占卜</title>
+    <link rel="stylesheet" href="/static/styles.css">
+  </head>
+  <body>
+    <main>
+      <h1>《增删卜易》六爻占卜</h1>
+      <p>时区固定为 Asia/Shanghai。六爻按初爻至上爻输入，初爻在下、上爻在上。</p>
+
+      <form id="divination-form">
+        <label for="question">所占之事</label>
+        <textarea
+          id="question"
+          maxlength="500"
+          placeholder="请在这里写清楚所问的人、事及关系；模型将仅根据这段文字判定用神。"
+          required
+        ></textarea>
+
+        <fieldset>
+          <legend>公历时间（Asia/Shanghai）</legend>
+          <div class="date-fields">
+            <label>年 <input id="year" type="number" min="1" max="9999" required></label>
+            <label>月 <input id="month" type="number" min="1" max="12" required></label>
+            <label>日 <input id="day" type="number" min="1" max="31" required></label>
+            <label>时 <input id="hour" type="number" min="0" max="23" required></label>
+          </div>
+        </fieldset>
+
+        <fieldset id="lines">
+          <legend>六爻（初爻在下、上爻在上）</legend>
+        </fieldset>
+
+        <button id="submit" type="submit">判定用神、排盘并断卦</button>
+      </form>
+
+      <p id="error" role="alert" hidden></p>
+      <section id="result" aria-live="polite" hidden></section>
+    </main>
+    <script src="/static/app.js" defer></script>
+  </body>
+</html>

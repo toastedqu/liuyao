@@ -1,0 +1,4114 @@
+{
+  "乾": [
+    {
+      "name": "乾为天",
+      "position": 1,
+      "lines": [
+        {
+          "line": 1,
+          "liuqin": "子孙",
+          "branch": "子",
+          "wuxing": "水",
+          "yang": true,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 2,
+          "liuqin": "妻财",
+          "branch": "寅",
+          "wuxing": "木",
+          "yang": true,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 3,
+          "liuqin": "父母",
+          "branch": "辰",
+          "wuxing": "土",
+          "yang": true,
+          "is_world": false,
+          "is_response": true
+        },
+        {
+          "line": 4,
+          "liuqin": "官鬼",
+          "branch": "午",
+          "wuxing": "火",
+          "yang": true,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 5,
+          "liuqin": "兄弟",
+          "branch": "申",
+          "wuxing": "金",
+          "yang": true,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 6,
+          "liuqin": "父母",
+          "branch": "戌",
+          "wuxing": "土",
+          "yang": true,
+          "is_world": true,
+          "is_response": false
+        }
+      ],
+      "world": 6,
+      "response": 3,
+      "missing_note": "(六冲)",
+      "ganzhi_ref": "甲午"
+    },
+    {
+      "name": "天风姤",
+      "position": 2,
+      "lines": [
+        {
+          "line": 1,
+          "liuqin": "父母",
+          "branch": "丑",
+          "wuxing": "土",
+          "yang": false,
+          "is_world": true,
+          "is_response": false
+        },
+        {
+          "line": 2,
+          "liuqin": "子孙",
+          "branch": "亥",
+          "wuxing": "水",
+          "yang": true,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 3,
+          "liuqin": "兄弟",
+          "branch": "酉",
+          "wuxing": "金",
+          "yang": true,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 4,
+          "liuqin": "官鬼",
+          "branch": "午",
+          "wuxing": "火",
+          "yang": true,
+          "is_world": false,
+          "is_response": true
+        },
+        {
+          "line": 5,
+          "liuqin": "兄弟",
+          "branch": "申",
+          "wuxing": "金",
+          "yang": true,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 6,
+          "liuqin": "父母",
+          "branch": "戌",
+          "wuxing": "土",
+          "yang": true,
+          "is_world": false,
+          "is_response": false
+        }
+      ],
+      "world": 1,
+      "response": 4,
+      "missing_note": "财爻缺",
+      "ganzhi_ref": "甲午"
+    },
+    {
+      "name": "天山遯",
+      "position": 3,
+      "lines": [
+        {
+          "line": 1,
+          "liuqin": "父母",
+          "branch": "辰",
+          "wuxing": "土",
+          "yang": false,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 2,
+          "liuqin": "官鬼",
+          "branch": "午",
+          "wuxing": "火",
+          "yang": false,
+          "is_world": true,
+          "is_response": false
+        },
+        {
+          "line": 3,
+          "liuqin": "兄弟",
+          "branch": "申",
+          "wuxing": "金",
+          "yang": true,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 4,
+          "liuqin": "官鬼",
+          "branch": "午",
+          "wuxing": "火",
+          "yang": true,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 5,
+          "liuqin": "兄弟",
+          "branch": "申",
+          "wuxing": "金",
+          "yang": true,
+          "is_world": false,
+          "is_response": true
+        },
+        {
+          "line": 6,
+          "liuqin": "父母",
+          "branch": "戌",
+          "wuxing": "土",
+          "yang": true,
+          "is_world": false,
+          "is_response": false
+        }
+      ],
+      "world": 2,
+      "response": 5,
+      "missing_note": "孙财爻缺",
+      "ganzhi_ref": "乙酉"
+    },
+    {
+      "name": "天地否",
+      "position": 4,
+      "lines": [
+        {
+          "line": 1,
+          "liuqin": "父母",
+          "branch": "未",
+          "wuxing": "土",
+          "yang": false,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 2,
+          "liuqin": "官鬼",
+          "branch": "巳",
+          "wuxing": "火",
+          "yang": false,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 3,
+          "liuqin": "妻财",
+          "branch": "卯",
+          "wuxing": "木",
+          "yang": false,
+          "is_world": true,
+          "is_response": false
+        },
+        {
+          "line": 4,
+          "liuqin": "官鬼",
+          "branch": "午",
+          "wuxing": "火",
+          "yang": true,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 5,
+          "liuqin": "兄弟",
+          "branch": "申",
+          "wuxing": "金",
+          "yang": true,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 6,
+          "liuqin": "父母",
+          "branch": "戌",
+          "wuxing": "土",
+          "yang": true,
+          "is_world": false,
+          "is_response": true
+        }
+      ],
+      "world": 3,
+      "response": 6,
+      "missing_note": "孙爻缺(六合)",
+      "ganzhi_ref": "庚戌"
+    },
+    {
+      "name": "风地观",
+      "position": 5,
+      "lines": [
+        {
+          "line": 1,
+          "liuqin": "父母",
+          "branch": "未",
+          "wuxing": "土",
+          "yang": false,
+          "is_world": false,
+          "is_response": true
+        },
+        {
+          "line": 2,
+          "liuqin": "官鬼",
+          "branch": "巳",
+          "wuxing": "火",
+          "yang": false,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 3,
+          "liuqin": "妻财",
+          "branch": "卯",
+          "wuxing": "木",
+          "yang": false,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 4,
+          "liuqin": "父母",
+          "branch": "未",
+          "wuxing": "土",
+          "yang": false,
+          "is_world": true,
+          "is_response": false
+        },
+        {
+          "line": 5,
+          "liuqin": "官鬼",
+          "branch": "巳",
+          "wuxing": "火",
+          "yang": true,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 6,
+          "liuqin": "妻财",
+          "branch": "卯",
+          "wuxing": "木",
+          "yang": true,
+          "is_world": false,
+          "is_response": false
+        }
+      ],
+      "world": 4,
+      "response": 1,
+      "missing_note": "孙兄爻缺",
+      "ganzhi_ref": "己亥"
+    },
+    {
+      "name": "山地剥",
+      "position": 6,
+      "lines": [
+        {
+          "line": 1,
+          "liuqin": "父母",
+          "branch": "未",
+          "wuxing": "土",
+          "yang": false,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 2,
+          "liuqin": "官鬼",
+          "branch": "巳",
+          "wuxing": "火",
+          "yang": false,
+          "is_world": false,
+          "is_response": true
+        },
+        {
+          "line": 3,
+          "liuqin": "妻财",
+          "branch": "卯",
+          "wuxing": "木",
+          "yang": false,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 4,
+          "liuqin": "父母",
+          "branch": "戌",
+          "wuxing": "土",
+          "yang": false,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 5,
+          "liuqin": "子孙",
+          "branch": "子",
+          "wuxing": "水",
+          "yang": false,
+          "is_world": true,
+          "is_response": false
+        },
+        {
+          "line": 6,
+          "liuqin": "妻财",
+          "branch": "寅",
+          "wuxing": "木",
+          "yang": true,
+          "is_world": false,
+          "is_response": false
+        }
+      ],
+      "world": 5,
+      "response": 2,
+      "missing_note": "兄爻缺",
+      "ganzhi_ref": "癸亥"
+    },
+    {
+      "name": "火地晋",
+      "position": 7,
+      "lines": [
+        {
+          "line": 1,
+          "liuqin": "父母",
+          "branch": "未",
+          "wuxing": "土",
+          "yang": false,
+          "is_world": false,
+          "is_response": true
+        },
+        {
+          "line": 2,
+          "liuqin": "官鬼",
+          "branch": "巳",
+          "wuxing": "火",
+          "yang": false,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 3,
+          "liuqin": "妻财",
+          "branch": "卯",
+          "wuxing": "木",
+          "yang": false,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 4,
+          "liuqin": "兄弟",
+          "branch": "酉",
+          "wuxing": "金",
+          "yang": true,
+          "is_world": true,
+          "is_response": false
+        },
+        {
+          "line": 5,
+          "liuqin": "父母",
+          "branch": "未",
+          "wuxing": "土",
+          "yang": false,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 6,
+          "liuqin": "官鬼",
+          "branch": "巳",
+          "wuxing": "火",
+          "yang": true,
+          "is_world": false,
+          "is_response": false
+        }
+      ],
+      "world": 4,
+      "response": 1,
+      "missing_note": "孙爻缺",
+      "ganzhi_ref": "乙亥"
+    },
+    {
+      "name": "火天大有",
+      "position": 8,
+      "lines": [
+        {
+          "line": 1,
+          "liuqin": "子孙",
+          "branch": "子",
+          "wuxing": "水",
+          "yang": true,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 2,
+          "liuqin": "妻财",
+          "branch": "寅",
+          "wuxing": "木",
+          "yang": true,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 3,
+          "liuqin": "父母",
+          "branch": "辰",
+          "wuxing": "土",
+          "yang": true,
+          "is_world": true,
+          "is_response": false
+        },
+        {
+          "line": 4,
+          "liuqin": "兄弟",
+          "branch": "酉",
+          "wuxing": "金",
+          "yang": true,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 5,
+          "liuqin": "父母",
+          "branch": "未",
+          "wuxing": "土",
+          "yang": false,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 6,
+          "liuqin": "官鬼",
+          "branch": "巳",
+          "wuxing": "火",
+          "yang": true,
+          "is_world": false,
+          "is_response": true
+        }
+      ],
+      "world": 3,
+      "response": 6,
+      "missing_note": "",
+      "ganzhi_ref": "辛巳"
+    }
+  ],
+  "坎": [
+    {
+      "name": "坎为水",
+      "position": 1,
+      "lines": [
+        {
+          "line": 1,
+          "liuqin": "子孙",
+          "branch": "寅",
+          "wuxing": "木",
+          "yang": false,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 2,
+          "liuqin": "官鬼",
+          "branch": "辰",
+          "wuxing": "土",
+          "yang": true,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 3,
+          "liuqin": "妻财",
+          "branch": "午",
+          "wuxing": "火",
+          "yang": false,
+          "is_world": false,
+          "is_response": true
+        },
+        {
+          "line": 4,
+          "liuqin": "父母",
+          "branch": "申",
+          "wuxing": "金",
+          "yang": false,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 5,
+          "liuqin": "官鬼",
+          "branch": "戌",
+          "wuxing": "土",
+          "yang": true,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 6,
+          "liuqin": "兄弟",
+          "branch": "子",
+          "wuxing": "水",
+          "yang": false,
+          "is_world": true,
+          "is_response": false
+        }
+      ],
+      "world": 6,
+      "response": 3,
+      "missing_note": "(六冲)",
+      "ganzhi_ref": "庚申"
+    },
+    {
+      "name": "水泽节",
+      "position": 2,
+      "lines": [
+        {
+          "line": 1,
+          "liuqin": "妻财",
+          "branch": "巳",
+          "wuxing": "火",
+          "yang": true,
+          "is_world": true,
+          "is_response": false
+        },
+        {
+          "line": 2,
+          "liuqin": "子孙",
+          "branch": "卯",
+          "wuxing": "木",
+          "yang": true,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 3,
+          "liuqin": "官鬼",
+          "branch": "丑",
+          "wuxing": "土",
+          "yang": false,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 4,
+          "liuqin": "父母",
+          "branch": "申",
+          "wuxing": "金",
+          "yang": false,
+          "is_world": false,
+          "is_response": true
+        },
+        {
+          "line": 5,
+          "liuqin": "官鬼",
+          "branch": "戌",
+          "wuxing": "土",
+          "yang": true,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 6,
+          "liuqin": "兄弟",
+          "branch": "子",
+          "wuxing": "水",
+          "yang": false,
+          "is_world": false,
+          "is_response": false
+        }
+      ],
+      "world": 1,
+      "response": 4,
+      "missing_note": "(六合)",
+      "ganzhi_ref": "己卯"
+    },
+    {
+      "name": "水雷屯",
+      "position": 3,
+      "lines": [
+        {
+          "line": 1,
+          "liuqin": "兄弟",
+          "branch": "子",
+          "wuxing": "水",
+          "yang": true,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 2,
+          "liuqin": "子孙",
+          "branch": "寅",
+          "wuxing": "木",
+          "yang": false,
+          "is_world": true,
+          "is_response": false
+        },
+        {
+          "line": 3,
+          "liuqin": "官鬼",
+          "branch": "辰",
+          "wuxing": "土",
+          "yang": false,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 4,
+          "liuqin": "父母",
+          "branch": "申",
+          "wuxing": "金",
+          "yang": false,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 5,
+          "liuqin": "官鬼",
+          "branch": "戌",
+          "wuxing": "土",
+          "yang": true,
+          "is_world": false,
+          "is_response": true
+        },
+        {
+          "line": 6,
+          "liuqin": "兄弟",
+          "branch": "子",
+          "wuxing": "水",
+          "yang": false,
+          "is_world": false,
+          "is_response": false
+        }
+      ],
+      "world": 2,
+      "response": 5,
+      "missing_note": "财爻缺(六冲)",
+      "ganzhi_ref": "戊子"
+    },
+    {
+      "name": "水火既济",
+      "position": 4,
+      "lines": [
+        {
+          "line": 1,
+          "liuqin": "子孙",
+          "branch": "卯",
+          "wuxing": "木",
+          "yang": true,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 2,
+          "liuqin": "官鬼",
+          "branch": "丑",
+          "wuxing": "土",
+          "yang": false,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 3,
+          "liuqin": "兄弟",
+          "branch": "亥",
+          "wuxing": "水",
+          "yang": true,
+          "is_world": true,
+          "is_response": false
+        },
+        {
+          "line": 4,
+          "liuqin": "父母",
+          "branch": "申",
+          "wuxing": "金",
+          "yang": false,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 5,
+          "liuqin": "官鬼",
+          "branch": "戌",
+          "wuxing": "土",
+          "yang": true,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 6,
+          "liuqin": "兄弟",
+          "branch": "子",
+          "wuxing": "水",
+          "yang": false,
+          "is_world": false,
+          "is_response": true
+        }
+      ],
+      "world": 3,
+      "response": 6,
+      "missing_note": "财爻缺",
+      "ganzhi_ref": "甲寅"
+    },
+    {
+      "name": "泽火革",
+      "position": 5,
+      "lines": [
+        {
+          "line": 1,
+          "liuqin": "子孙",
+          "branch": "卯",
+          "wuxing": "木",
+          "yang": true,
+          "is_world": false,
+          "is_response": true
+        },
+        {
+          "line": 2,
+          "liuqin": "官鬼",
+          "branch": "丑",
+          "wuxing": "土",
+          "yang": false,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 3,
+          "liuqin": "兄弟",
+          "branch": "亥",
+          "wuxing": "水",
+          "yang": true,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 4,
+          "liuqin": "兄弟",
+          "branch": "亥",
+          "wuxing": "水",
+          "yang": true,
+          "is_world": true,
+          "is_response": false
+        },
+        {
+          "line": 5,
+          "liuqin": "父母",
+          "branch": "酉",
+          "wuxing": "金",
+          "yang": true,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 6,
+          "liuqin": "官鬼",
+          "branch": "未",
+          "wuxing": "土",
+          "yang": false,
+          "is_world": false,
+          "is_response": false
+        }
+      ],
+      "world": 4,
+      "response": 1,
+      "missing_note": "财爻缺",
+      "ganzhi_ref": "庚寅"
+    },
+    {
+      "name": "雷火丰",
+      "position": 6,
+      "lines": [
+        {
+          "line": 1,
+          "liuqin": "子孙",
+          "branch": "卯",
+          "wuxing": "木",
+          "yang": true,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 2,
+          "liuqin": "官鬼",
+          "branch": "丑",
+          "wuxing": "土",
+          "yang": false,
+          "is_world": false,
+          "is_response": true
+        },
+        {
+          "line": 3,
+          "liuqin": "兄弟",
+          "branch": "亥",
+          "wuxing": "水",
+          "yang": true,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 4,
+          "liuqin": "妻财",
+          "branch": "午",
+          "wuxing": "火",
+          "yang": true,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 5,
+          "liuqin": "父母",
+          "branch": "申",
+          "wuxing": "金",
+          "yang": false,
+          "is_world": true,
+          "is_response": false
+        },
+        {
+          "line": 6,
+          "liuqin": "官鬼",
+          "branch": "戌",
+          "wuxing": "土",
+          "yang": false,
+          "is_world": false,
+          "is_response": false
+        }
+      ],
+      "world": 5,
+      "response": 2,
+      "missing_note": "",
+      "ganzhi_ref": "戊寅"
+    },
+    {
+      "name": "地火明夷",
+      "position": 7,
+      "lines": [
+        {
+          "line": 1,
+          "liuqin": "子孙",
+          "branch": "卯",
+          "wuxing": "木",
+          "yang": true,
+          "is_world": false,
+          "is_response": true
+        },
+        {
+          "line": 2,
+          "liuqin": "官鬼",
+          "branch": "丑",
+          "wuxing": "土",
+          "yang": false,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 3,
+          "liuqin": "兄弟",
+          "branch": "亥",
+          "wuxing": "水",
+          "yang": true,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 4,
+          "liuqin": "官鬼",
+          "branch": "丑",
+          "wuxing": "土",
+          "yang": false,
+          "is_world": true,
+          "is_response": false
+        },
+        {
+          "line": 5,
+          "liuqin": "兄弟",
+          "branch": "亥",
+          "wuxing": "水",
+          "yang": false,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 6,
+          "liuqin": "父母",
+          "branch": "酉",
+          "wuxing": "金",
+          "yang": false,
+          "is_world": false,
+          "is_response": false
+        }
+      ],
+      "world": 4,
+      "response": 1,
+      "missing_note": "财爻缺",
+      "ganzhi_ref": "辛丑"
+    },
+    {
+      "name": "地水师",
+      "position": 8,
+      "lines": [
+        {
+          "line": 1,
+          "liuqin": "子孙",
+          "branch": "寅",
+          "wuxing": "木",
+          "yang": false,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 2,
+          "liuqin": "官鬼",
+          "branch": "辰",
+          "wuxing": "土",
+          "yang": true,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 3,
+          "liuqin": "妻财",
+          "branch": "午",
+          "wuxing": "火",
+          "yang": false,
+          "is_world": true,
+          "is_response": false
+        },
+        {
+          "line": 4,
+          "liuqin": "官鬼",
+          "branch": "丑",
+          "wuxing": "土",
+          "yang": false,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 5,
+          "liuqin": "兄弟",
+          "branch": "亥",
+          "wuxing": "水",
+          "yang": false,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 6,
+          "liuqin": "父母",
+          "branch": "酉",
+          "wuxing": "金",
+          "yang": false,
+          "is_world": false,
+          "is_response": true
+        }
+      ],
+      "world": 3,
+      "response": 6,
+      "missing_note": "",
+      "ganzhi_ref": "壬申"
+    }
+  ],
+  "艮": [
+    {
+      "name": "艮为山",
+      "position": 1,
+      "lines": [
+        {
+          "line": 1,
+          "liuqin": "兄弟",
+          "branch": "辰",
+          "wuxing": "土",
+          "yang": false,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 2,
+          "liuqin": "父母",
+          "branch": "午",
+          "wuxing": "火",
+          "yang": false,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 3,
+          "liuqin": "子孙",
+          "branch": "申",
+          "wuxing": "金",
+          "yang": true,
+          "is_world": false,
+          "is_response": true
+        },
+        {
+          "line": 4,
+          "liuqin": "兄弟",
+          "branch": "戌",
+          "wuxing": "土",
+          "yang": false,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 5,
+          "liuqin": "妻财",
+          "branch": "子",
+          "wuxing": "水",
+          "yang": false,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 6,
+          "liuqin": "官鬼",
+          "branch": "寅",
+          "wuxing": "木",
+          "yang": true,
+          "is_world": true,
+          "is_response": false
+        }
+      ],
+      "world": 6,
+      "response": 3,
+      "missing_note": "(六冲)",
+      "ganzhi_ref": "丙戌"
+    },
+    {
+      "name": "山火贲",
+      "position": 2,
+      "lines": [
+        {
+          "line": 1,
+          "liuqin": "官鬼",
+          "branch": "卯",
+          "wuxing": "木",
+          "yang": true,
+          "is_world": true,
+          "is_response": false
+        },
+        {
+          "line": 2,
+          "liuqin": "兄弟",
+          "branch": "丑",
+          "wuxing": "土",
+          "yang": false,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 3,
+          "liuqin": "妻财",
+          "branch": "亥",
+          "wuxing": "水",
+          "yang": true,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 4,
+          "liuqin": "兄弟",
+          "branch": "戌",
+          "wuxing": "土",
+          "yang": false,
+          "is_world": false,
+          "is_response": true
+        },
+        {
+          "line": 5,
+          "liuqin": "妻财",
+          "branch": "子",
+          "wuxing": "水",
+          "yang": false,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 6,
+          "liuqin": "官鬼",
+          "branch": "寅",
+          "wuxing": "木",
+          "yang": true,
+          "is_world": false,
+          "is_response": false
+        }
+      ],
+      "world": 1,
+      "response": 4,
+      "missing_note": "孙父爻缺(六合)",
+      "ganzhi_ref": "癸丑"
+    },
+    {
+      "name": "山天大畜",
+      "position": 3,
+      "lines": [
+        {
+          "line": 1,
+          "liuqin": "妻财",
+          "branch": "子",
+          "wuxing": "水",
+          "yang": true,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 2,
+          "liuqin": "官鬼",
+          "branch": "寅",
+          "wuxing": "木",
+          "yang": true,
+          "is_world": true,
+          "is_response": false
+        },
+        {
+          "line": 3,
+          "liuqin": "兄弟",
+          "branch": "辰",
+          "wuxing": "土",
+          "yang": true,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 4,
+          "liuqin": "兄弟",
+          "branch": "戌",
+          "wuxing": "土",
+          "yang": false,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 5,
+          "liuqin": "妻财",
+          "branch": "子",
+          "wuxing": "水",
+          "yang": false,
+          "is_world": false,
+          "is_response": true
+        },
+        {
+          "line": 6,
+          "liuqin": "官鬼",
+          "branch": "寅",
+          "wuxing": "木",
+          "yang": true,
+          "is_world": false,
+          "is_response": false
+        }
+      ],
+      "world": 2,
+      "response": 5,
+      "missing_note": "孙父爻缺",
+      "ganzhi_ref": "壬辰"
+    },
+    {
+      "name": "山泽损",
+      "position": 4,
+      "lines": [
+        {
+          "line": 1,
+          "liuqin": "父母",
+          "branch": "巳",
+          "wuxing": "火",
+          "yang": true,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 2,
+          "liuqin": "官鬼",
+          "branch": "卯",
+          "wuxing": "木",
+          "yang": true,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 3,
+          "liuqin": "兄弟",
+          "branch": "丑",
+          "wuxing": "土",
+          "yang": false,
+          "is_world": true,
+          "is_response": false
+        },
+        {
+          "line": 4,
+          "liuqin": "兄弟",
+          "branch": "戌",
+          "wuxing": "土",
+          "yang": false,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 5,
+          "liuqin": "妻财",
+          "branch": "子",
+          "wuxing": "水",
+          "yang": false,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 6,
+          "liuqin": "官鬼",
+          "branch": "寅",
+          "wuxing": "木",
+          "yang": true,
+          "is_world": false,
+          "is_response": true
+        }
+      ],
+      "world": 3,
+      "response": 6,
+      "missing_note": "孙爻缺",
+      "ganzhi_ref": "丁卯"
+    },
+    {
+      "name": "火泽睽",
+      "position": 5,
+      "lines": [
+        {
+          "line": 1,
+          "liuqin": "父母",
+          "branch": "巳",
+          "wuxing": "火",
+          "yang": true,
+          "is_world": false,
+          "is_response": true
+        },
+        {
+          "line": 2,
+          "liuqin": "官鬼",
+          "branch": "卯",
+          "wuxing": "木",
+          "yang": true,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 3,
+          "liuqin": "兄弟",
+          "branch": "丑",
+          "wuxing": "土",
+          "yang": false,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 4,
+          "liuqin": "子孙",
+          "branch": "酉",
+          "wuxing": "金",
+          "yang": true,
+          "is_world": true,
+          "is_response": false
+        },
+        {
+          "line": 5,
+          "liuqin": "兄弟",
+          "branch": "未",
+          "wuxing": "土",
+          "yang": false,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 6,
+          "liuqin": "父母",
+          "branch": "巳",
+          "wuxing": "火",
+          "yang": true,
+          "is_world": false,
+          "is_response": false
+        }
+      ],
+      "world": 4,
+      "response": 1,
+      "missing_note": "财爻缺",
+      "ganzhi_ref": "甲辰"
+    },
+    {
+      "name": "天泽履",
+      "position": 6,
+      "lines": [
+        {
+          "line": 1,
+          "liuqin": "父母",
+          "branch": "巳",
+          "wuxing": "火",
+          "yang": true,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 2,
+          "liuqin": "官鬼",
+          "branch": "卯",
+          "wuxing": "木",
+          "yang": true,
+          "is_world": false,
+          "is_response": true
+        },
+        {
+          "line": 3,
+          "liuqin": "兄弟",
+          "branch": "丑",
+          "wuxing": "土",
+          "yang": false,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 4,
+          "liuqin": "父母",
+          "branch": "午",
+          "wuxing": "火",
+          "yang": true,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 5,
+          "liuqin": "子孙",
+          "branch": "申",
+          "wuxing": "金",
+          "yang": true,
+          "is_world": true,
+          "is_response": false
+        },
+        {
+          "line": 6,
+          "liuqin": "兄弟",
+          "branch": "戌",
+          "wuxing": "土",
+          "yang": true,
+          "is_world": false,
+          "is_response": false
+        }
+      ],
+      "world": 5,
+      "response": 2,
+      "missing_note": "财爻缺",
+      "ganzhi_ref": "戊辰"
+    },
+    {
+      "name": "风泽中孚",
+      "position": 7,
+      "lines": [
+        {
+          "line": 1,
+          "liuqin": "父母",
+          "branch": "巳",
+          "wuxing": "火",
+          "yang": true,
+          "is_world": false,
+          "is_response": true
+        },
+        {
+          "line": 2,
+          "liuqin": "官鬼",
+          "branch": "卯",
+          "wuxing": "木",
+          "yang": true,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 3,
+          "liuqin": "兄弟",
+          "branch": "丑",
+          "wuxing": "土",
+          "yang": false,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 4,
+          "liuqin": "兄弟",
+          "branch": "未",
+          "wuxing": "土",
+          "yang": false,
+          "is_world": true,
+          "is_response": false
+        },
+        {
+          "line": 5,
+          "liuqin": "父母",
+          "branch": "巳",
+          "wuxing": "火",
+          "yang": true,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 6,
+          "liuqin": "官鬼",
+          "branch": "卯",
+          "wuxing": "木",
+          "yang": true,
+          "is_world": false,
+          "is_response": false
+        }
+      ],
+      "world": 4,
+      "response": 1,
+      "missing_note": "孙财爻缺",
+      "ganzhi_ref": "辛卯"
+    },
+    {
+      "name": "风山渐",
+      "position": 8,
+      "lines": [
+        {
+          "line": 1,
+          "liuqin": "兄弟",
+          "branch": "辰",
+          "wuxing": "土",
+          "yang": false,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 2,
+          "liuqin": "父母",
+          "branch": "午",
+          "wuxing": "火",
+          "yang": false,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 3,
+          "liuqin": "子孙",
+          "branch": "申",
+          "wuxing": "金",
+          "yang": true,
+          "is_world": true,
+          "is_response": false
+        },
+        {
+          "line": 4,
+          "liuqin": "兄弟",
+          "branch": "未",
+          "wuxing": "土",
+          "yang": false,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 5,
+          "liuqin": "父母",
+          "branch": "巳",
+          "wuxing": "火",
+          "yang": true,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 6,
+          "liuqin": "官鬼",
+          "branch": "卯",
+          "wuxing": "木",
+          "yang": true,
+          "is_world": false,
+          "is_response": true
+        }
+      ],
+      "world": 3,
+      "response": 6,
+      "missing_note": "财爻缺",
+      "ganzhi_ref": "癸酉"
+    }
+  ],
+  "震": [
+    {
+      "name": "震为雷",
+      "position": 1,
+      "lines": [
+        {
+          "line": 1,
+          "liuqin": "父母",
+          "branch": "子",
+          "wuxing": "水",
+          "yang": true,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 2,
+          "liuqin": "兄弟",
+          "branch": "寅",
+          "wuxing": "木",
+          "yang": false,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 3,
+          "liuqin": "妻财",
+          "branch": "辰",
+          "wuxing": "土",
+          "yang": false,
+          "is_world": false,
+          "is_response": true
+        },
+        {
+          "line": 4,
+          "liuqin": "子孙",
+          "branch": "午",
+          "wuxing": "火",
+          "yang": true,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 5,
+          "liuqin": "官鬼",
+          "branch": "申",
+          "wuxing": "金",
+          "yang": false,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 6,
+          "liuqin": "妻财",
+          "branch": "戌",
+          "wuxing": "土",
+          "yang": false,
+          "is_world": true,
+          "is_response": false
+        }
+      ],
+      "world": 6,
+      "response": 3,
+      "missing_note": "(六冲)",
+      "ganzhi_ref": "甲子"
+    },
+    {
+      "name": "雷地豫",
+      "position": 2,
+      "lines": [
+        {
+          "line": 1,
+          "liuqin": "妻财",
+          "branch": "未",
+          "wuxing": "土",
+          "yang": false,
+          "is_world": true,
+          "is_response": false
+        },
+        {
+          "line": 2,
+          "liuqin": "子孙",
+          "branch": "巳",
+          "wuxing": "火",
+          "yang": false,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 3,
+          "liuqin": "兄弟",
+          "branch": "卯",
+          "wuxing": "木",
+          "yang": false,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 4,
+          "liuqin": "子孙",
+          "branch": "午",
+          "wuxing": "火",
+          "yang": true,
+          "is_world": false,
+          "is_response": true
+        },
+        {
+          "line": 5,
+          "liuqin": "官鬼",
+          "branch": "申",
+          "wuxing": "金",
+          "yang": false,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 6,
+          "liuqin": "妻财",
+          "branch": "戌",
+          "wuxing": "土",
+          "yang": false,
+          "is_world": false,
+          "is_response": false
+        }
+      ],
+      "world": 1,
+      "response": 4,
+      "missing_note": "父爻缺",
+      "ganzhi_ref": "壬子"
+    },
+    {
+      "name": "雷水解",
+      "position": 3,
+      "lines": [
+        {
+          "line": 1,
+          "liuqin": "兄弟",
+          "branch": "寅",
+          "wuxing": "木",
+          "yang": false,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 2,
+          "liuqin": "妻财",
+          "branch": "辰",
+          "wuxing": "土",
+          "yang": true,
+          "is_world": true,
+          "is_response": false
+        },
+        {
+          "line": 3,
+          "liuqin": "子孙",
+          "branch": "午",
+          "wuxing": "火",
+          "yang": false,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 4,
+          "liuqin": "子孙",
+          "branch": "午",
+          "wuxing": "火",
+          "yang": true,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 5,
+          "liuqin": "官鬼",
+          "branch": "申",
+          "wuxing": "金",
+          "yang": false,
+          "is_world": false,
+          "is_response": true
+        },
+        {
+          "line": 6,
+          "liuqin": "妻财",
+          "branch": "戌",
+          "wuxing": "土",
+          "yang": false,
+          "is_world": false,
+          "is_response": false
+        }
+      ],
+      "world": 2,
+      "response": 5,
+      "missing_note": "父爻缺",
+      "ganzhi_ref": "丁亥"
+    },
+    {
+      "name": "雷风恒",
+      "position": 4,
+      "lines": [
+        {
+          "line": 1,
+          "liuqin": "妻财",
+          "branch": "丑",
+          "wuxing": "土",
+          "yang": false,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 2,
+          "liuqin": "父母",
+          "branch": "亥",
+          "wuxing": "水",
+          "yang": true,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 3,
+          "liuqin": "官鬼",
+          "branch": "酉",
+          "wuxing": "金",
+          "yang": true,
+          "is_world": true,
+          "is_response": false
+        },
+        {
+          "line": 4,
+          "liuqin": "子孙",
+          "branch": "午",
+          "wuxing": "火",
+          "yang": true,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 5,
+          "liuqin": "官鬼",
+          "branch": "申",
+          "wuxing": "金",
+          "yang": false,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 6,
+          "liuqin": "妻财",
+          "branch": "戌",
+          "wuxing": "土",
+          "yang": false,
+          "is_world": false,
+          "is_response": true
+        }
+      ],
+      "world": 3,
+      "response": 6,
+      "missing_note": "兄爻缺",
+      "ganzhi_ref": "丙申"
+    },
+    {
+      "name": "地风升",
+      "position": 5,
+      "lines": [
+        {
+          "line": 1,
+          "liuqin": "妻财",
+          "branch": "丑",
+          "wuxing": "土",
+          "yang": false,
+          "is_world": false,
+          "is_response": true
+        },
+        {
+          "line": 2,
+          "liuqin": "父母",
+          "branch": "亥",
+          "wuxing": "水",
+          "yang": true,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 3,
+          "liuqin": "官鬼",
+          "branch": "酉",
+          "wuxing": "金",
+          "yang": true,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 4,
+          "liuqin": "妻财",
+          "branch": "丑",
+          "wuxing": "土",
+          "yang": false,
+          "is_world": true,
+          "is_response": false
+        },
+        {
+          "line": 5,
+          "liuqin": "父母",
+          "branch": "亥",
+          "wuxing": "水",
+          "yang": false,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 6,
+          "liuqin": "官鬼",
+          "branch": "酉",
+          "wuxing": "金",
+          "yang": false,
+          "is_world": false,
+          "is_response": false
+        }
+      ],
+      "world": 4,
+      "response": 1,
+      "missing_note": "孙兄爻缺",
+      "ganzhi_ref": "庚午"
+    },
+    {
+      "name": "水风井",
+      "position": 6,
+      "lines": [
+        {
+          "line": 1,
+          "liuqin": "妻财",
+          "branch": "丑",
+          "wuxing": "土",
+          "yang": false,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 2,
+          "liuqin": "父母",
+          "branch": "亥",
+          "wuxing": "水",
+          "yang": true,
+          "is_world": false,
+          "is_response": true
+        },
+        {
+          "line": 3,
+          "liuqin": "官鬼",
+          "branch": "酉",
+          "wuxing": "金",
+          "yang": true,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 4,
+          "liuqin": "官鬼",
+          "branch": "申",
+          "wuxing": "金",
+          "yang": false,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 5,
+          "liuqin": "妻财",
+          "branch": "戌",
+          "wuxing": "土",
+          "yang": true,
+          "is_world": true,
+          "is_response": false
+        },
+        {
+          "line": 6,
+          "liuqin": "父母",
+          "branch": "子",
+          "wuxing": "水",
+          "yang": false,
+          "is_world": false,
+          "is_response": false
+        }
+      ],
+      "world": 5,
+      "response": 2,
+      "missing_note": "孙兄爻缺",
+      "ganzhi_ref": "乙未"
+    },
+    {
+      "name": "泽风大过",
+      "position": 7,
+      "lines": [
+        {
+          "line": 1,
+          "liuqin": "妻财",
+          "branch": "丑",
+          "wuxing": "土",
+          "yang": false,
+          "is_world": false,
+          "is_response": true
+        },
+        {
+          "line": 2,
+          "liuqin": "父母",
+          "branch": "亥",
+          "wuxing": "水",
+          "yang": true,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 3,
+          "liuqin": "官鬼",
+          "branch": "酉",
+          "wuxing": "金",
+          "yang": true,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 4,
+          "liuqin": "父母",
+          "branch": "亥",
+          "wuxing": "水",
+          "yang": true,
+          "is_world": true,
+          "is_response": false
+        },
+        {
+          "line": 5,
+          "liuqin": "官鬼",
+          "branch": "酉",
+          "wuxing": "金",
+          "yang": true,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 6,
+          "liuqin": "妻财",
+          "branch": "未",
+          "wuxing": "土",
+          "yang": false,
+          "is_world": false,
+          "is_response": false
+        }
+      ],
+      "world": 4,
+      "response": 1,
+      "missing_note": "孙兄爻缺",
+      "ganzhi_ref": "丙午"
+    },
+    {
+      "name": "泽雷随",
+      "position": 8,
+      "lines": [
+        {
+          "line": 1,
+          "liuqin": "父母",
+          "branch": "子",
+          "wuxing": "水",
+          "yang": true,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 2,
+          "liuqin": "兄弟",
+          "branch": "寅",
+          "wuxing": "木",
+          "yang": false,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 3,
+          "liuqin": "妻财",
+          "branch": "辰",
+          "wuxing": "土",
+          "yang": false,
+          "is_world": true,
+          "is_response": false
+        },
+        {
+          "line": 4,
+          "liuqin": "父母",
+          "branch": "亥",
+          "wuxing": "水",
+          "yang": true,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 5,
+          "liuqin": "官鬼",
+          "branch": "酉",
+          "wuxing": "金",
+          "yang": true,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 6,
+          "liuqin": "妻财",
+          "branch": "未",
+          "wuxing": "土",
+          "yang": false,
+          "is_world": false,
+          "is_response": true
+        }
+      ],
+      "world": 3,
+      "response": 6,
+      "missing_note": "孙爻缺",
+      "ganzhi_ref": "丁丑"
+    }
+  ],
+  "巽": [
+    {
+      "name": "巽为风",
+      "position": 1,
+      "lines": [
+        {
+          "line": 1,
+          "liuqin": "妻财",
+          "branch": "丑",
+          "wuxing": "土",
+          "yang": false,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 2,
+          "liuqin": "父母",
+          "branch": "亥",
+          "wuxing": "水",
+          "yang": true,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 3,
+          "liuqin": "官鬼",
+          "branch": "酉",
+          "wuxing": "金",
+          "yang": true,
+          "is_world": false,
+          "is_response": true
+        },
+        {
+          "line": 4,
+          "liuqin": "妻财",
+          "branch": "未",
+          "wuxing": "土",
+          "yang": false,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 5,
+          "liuqin": "子孙",
+          "branch": "巳",
+          "wuxing": "火",
+          "yang": true,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 6,
+          "liuqin": "兄弟",
+          "branch": "卯",
+          "wuxing": "木",
+          "yang": true,
+          "is_world": true,
+          "is_response": false
+        }
+      ],
+      "world": 6,
+      "response": 3,
+      "missing_note": "(六冲)",
+      "ganzhi_ref": "壬午"
+    },
+    {
+      "name": "风天小畜",
+      "position": 2,
+      "lines": [
+        {
+          "line": 1,
+          "liuqin": "父母",
+          "branch": "子",
+          "wuxing": "水",
+          "yang": true,
+          "is_world": true,
+          "is_response": false
+        },
+        {
+          "line": 2,
+          "liuqin": "兄弟",
+          "branch": "寅",
+          "wuxing": "木",
+          "yang": true,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 3,
+          "liuqin": "妻财",
+          "branch": "辰",
+          "wuxing": "土",
+          "yang": true,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 4,
+          "liuqin": "妻财",
+          "branch": "未",
+          "wuxing": "土",
+          "yang": false,
+          "is_world": false,
+          "is_response": true
+        },
+        {
+          "line": 5,
+          "liuqin": "子孙",
+          "branch": "巳",
+          "wuxing": "火",
+          "yang": true,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 6,
+          "liuqin": "兄弟",
+          "branch": "卯",
+          "wuxing": "木",
+          "yang": true,
+          "is_world": false,
+          "is_response": false
+        }
+      ],
+      "world": 1,
+      "response": 4,
+      "missing_note": "官爻缺",
+      "ganzhi_ref": "丁巳"
+    },
+    {
+      "name": "风火家人",
+      "position": 3,
+      "lines": [
+        {
+          "line": 1,
+          "liuqin": "兄弟",
+          "branch": "卯",
+          "wuxing": "木",
+          "yang": true,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 2,
+          "liuqin": "妻财",
+          "branch": "丑",
+          "wuxing": "土",
+          "yang": false,
+          "is_world": true,
+          "is_response": false
+        },
+        {
+          "line": 3,
+          "liuqin": "父母",
+          "branch": "亥",
+          "wuxing": "水",
+          "yang": true,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 4,
+          "liuqin": "妻财",
+          "branch": "未",
+          "wuxing": "土",
+          "yang": false,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 5,
+          "liuqin": "子孙",
+          "branch": "巳",
+          "wuxing": "火",
+          "yang": true,
+          "is_world": false,
+          "is_response": true
+        },
+        {
+          "line": 6,
+          "liuqin": "兄弟",
+          "branch": "卯",
+          "wuxing": "木",
+          "yang": true,
+          "is_world": false,
+          "is_response": false
+        }
+      ],
+      "world": 2,
+      "response": 5,
+      "missing_note": "官爻缺",
+      "ganzhi_ref": "丙寅"
+    },
+    {
+      "name": "风雷益",
+      "position": 4,
+      "lines": [
+        {
+          "line": 1,
+          "liuqin": "父母",
+          "branch": "子",
+          "wuxing": "水",
+          "yang": true,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 2,
+          "liuqin": "兄弟",
+          "branch": "寅",
+          "wuxing": "木",
+          "yang": false,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 3,
+          "liuqin": "妻财",
+          "branch": "辰",
+          "wuxing": "土",
+          "yang": false,
+          "is_world": true,
+          "is_response": false
+        },
+        {
+          "line": 4,
+          "liuqin": "妻财",
+          "branch": "未",
+          "wuxing": "土",
+          "yang": false,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 5,
+          "liuqin": "子孙",
+          "branch": "巳",
+          "wuxing": "火",
+          "yang": true,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 6,
+          "liuqin": "兄弟",
+          "branch": "卯",
+          "wuxing": "木",
+          "yang": true,
+          "is_world": false,
+          "is_response": true
+        }
+      ],
+      "world": 3,
+      "response": 6,
+      "missing_note": "官爻缺",
+      "ganzhi_ref": "庚子"
+    },
+    {
+      "name": "天雷无妄",
+      "position": 5,
+      "lines": [
+        {
+          "line": 1,
+          "liuqin": "父母",
+          "branch": "子",
+          "wuxing": "水",
+          "yang": true,
+          "is_world": false,
+          "is_response": true
+        },
+        {
+          "line": 2,
+          "liuqin": "兄弟",
+          "branch": "寅",
+          "wuxing": "木",
+          "yang": false,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 3,
+          "liuqin": "妻财",
+          "branch": "辰",
+          "wuxing": "土",
+          "yang": false,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 4,
+          "liuqin": "子孙",
+          "branch": "午",
+          "wuxing": "火",
+          "yang": true,
+          "is_world": true,
+          "is_response": false
+        },
+        {
+          "line": 5,
+          "liuqin": "官鬼",
+          "branch": "申",
+          "wuxing": "金",
+          "yang": true,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 6,
+          "liuqin": "妻财",
+          "branch": "戌",
+          "wuxing": "土",
+          "yang": true,
+          "is_world": false,
+          "is_response": false
+        }
+      ],
+      "world": 4,
+      "response": 1,
+      "missing_note": "(六冲)",
+      "ganzhi_ref": "己丑"
+    },
+    {
+      "name": "火雷噬嗑",
+      "position": 6,
+      "lines": [
+        {
+          "line": 1,
+          "liuqin": "父母",
+          "branch": "子",
+          "wuxing": "水",
+          "yang": true,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 2,
+          "liuqin": "兄弟",
+          "branch": "寅",
+          "wuxing": "木",
+          "yang": false,
+          "is_world": false,
+          "is_response": true
+        },
+        {
+          "line": 3,
+          "liuqin": "妻财",
+          "branch": "辰",
+          "wuxing": "土",
+          "yang": false,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 4,
+          "liuqin": "官鬼",
+          "branch": "酉",
+          "wuxing": "金",
+          "yang": true,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 5,
+          "liuqin": "妻财",
+          "branch": "未",
+          "wuxing": "土",
+          "yang": false,
+          "is_world": true,
+          "is_response": false
+        },
+        {
+          "line": 6,
+          "liuqin": "子孙",
+          "branch": "巳",
+          "wuxing": "火",
+          "yang": true,
+          "is_world": false,
+          "is_response": false
+        }
+      ],
+      "world": 5,
+      "response": 2,
+      "missing_note": "",
+      "ganzhi_ref": "乙丑"
+    },
+    {
+      "name": "山雷颐",
+      "position": 7,
+      "lines": [
+        {
+          "line": 1,
+          "liuqin": "父母",
+          "branch": "子",
+          "wuxing": "水",
+          "yang": true,
+          "is_world": false,
+          "is_response": true
+        },
+        {
+          "line": 2,
+          "liuqin": "兄弟",
+          "branch": "寅",
+          "wuxing": "木",
+          "yang": false,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 3,
+          "liuqin": "妻财",
+          "branch": "辰",
+          "wuxing": "土",
+          "yang": false,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 4,
+          "liuqin": "妻财",
+          "branch": "戌",
+          "wuxing": "土",
+          "yang": false,
+          "is_world": true,
+          "is_response": false
+        },
+        {
+          "line": 5,
+          "liuqin": "父母",
+          "branch": "子",
+          "wuxing": "水",
+          "yang": false,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 6,
+          "liuqin": "兄弟",
+          "branch": "寅",
+          "wuxing": "木",
+          "yang": true,
+          "is_world": false,
+          "is_response": false
+        }
+      ],
+      "world": 4,
+      "response": 1,
+      "missing_note": "孙官爻缺",
+      "ganzhi_ref": "丙子"
+    },
+    {
+      "name": "山风蛊",
+      "position": 8,
+      "lines": [
+        {
+          "line": 1,
+          "liuqin": "妻财",
+          "branch": "丑",
+          "wuxing": "土",
+          "yang": false,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 2,
+          "liuqin": "父母",
+          "branch": "亥",
+          "wuxing": "水",
+          "yang": true,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 3,
+          "liuqin": "官鬼",
+          "branch": "酉",
+          "wuxing": "金",
+          "yang": true,
+          "is_world": true,
+          "is_response": false
+        },
+        {
+          "line": 4,
+          "liuqin": "妻财",
+          "branch": "戌",
+          "wuxing": "土",
+          "yang": false,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 5,
+          "liuqin": "父母",
+          "branch": "子",
+          "wuxing": "水",
+          "yang": false,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 6,
+          "liuqin": "兄弟",
+          "branch": "寅",
+          "wuxing": "木",
+          "yang": true,
+          "is_world": false,
+          "is_response": true
+        }
+      ],
+      "world": 3,
+      "response": 6,
+      "missing_note": "孙爻缺",
+      "ganzhi_ref": "丁未"
+    }
+  ],
+  "离": [
+    {
+      "name": "离为火",
+      "position": 1,
+      "lines": [
+        {
+          "line": 1,
+          "liuqin": "父母",
+          "branch": "卯",
+          "wuxing": "木",
+          "yang": true,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 2,
+          "liuqin": "子孙",
+          "branch": "丑",
+          "wuxing": "土",
+          "yang": false,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 3,
+          "liuqin": "官鬼",
+          "branch": "亥",
+          "wuxing": "水",
+          "yang": true,
+          "is_world": false,
+          "is_response": true
+        },
+        {
+          "line": 4,
+          "liuqin": "妻财",
+          "branch": "酉",
+          "wuxing": "金",
+          "yang": true,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 5,
+          "liuqin": "子孙",
+          "branch": "未",
+          "wuxing": "土",
+          "yang": false,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 6,
+          "liuqin": "兄弟",
+          "branch": "巳",
+          "wuxing": "火",
+          "yang": true,
+          "is_world": true,
+          "is_response": false
+        }
+      ],
+      "world": 6,
+      "response": 3,
+      "missing_note": "(六冲)",
+      "ganzhi_ref": "庚寅"
+    },
+    {
+      "name": "火山旅",
+      "position": 2,
+      "lines": [
+        {
+          "line": 1,
+          "liuqin": "子孙",
+          "branch": "辰",
+          "wuxing": "土",
+          "yang": false,
+          "is_world": true,
+          "is_response": false
+        },
+        {
+          "line": 2,
+          "liuqin": "兄弟",
+          "branch": "午",
+          "wuxing": "火",
+          "yang": false,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 3,
+          "liuqin": "妻财",
+          "branch": "申",
+          "wuxing": "金",
+          "yang": true,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 4,
+          "liuqin": "妻财",
+          "branch": "酉",
+          "wuxing": "金",
+          "yang": true,
+          "is_world": false,
+          "is_response": true
+        },
+        {
+          "line": 5,
+          "liuqin": "子孙",
+          "branch": "未",
+          "wuxing": "土",
+          "yang": false,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 6,
+          "liuqin": "兄弟",
+          "branch": "巳",
+          "wuxing": "火",
+          "yang": true,
+          "is_world": false,
+          "is_response": false
+        }
+      ],
+      "world": 1,
+      "response": 4,
+      "missing_note": "父官爻缺",
+      "ganzhi_ref": "己酉"
+    },
+    {
+      "name": "火风鼎",
+      "position": 3,
+      "lines": [
+        {
+          "line": 1,
+          "liuqin": "子孙",
+          "branch": "丑",
+          "wuxing": "土",
+          "yang": false,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 2,
+          "liuqin": "官鬼",
+          "branch": "亥",
+          "wuxing": "水",
+          "yang": true,
+          "is_world": true,
+          "is_response": false
+        },
+        {
+          "line": 3,
+          "liuqin": "妻财",
+          "branch": "酉",
+          "wuxing": "金",
+          "yang": true,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 4,
+          "liuqin": "妻财",
+          "branch": "酉",
+          "wuxing": "金",
+          "yang": true,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 5,
+          "liuqin": "子孙",
+          "branch": "未",
+          "wuxing": "土",
+          "yang": false,
+          "is_world": false,
+          "is_response": true
+        },
+        {
+          "line": 6,
+          "liuqin": "兄弟",
+          "branch": "巳",
+          "wuxing": "火",
+          "yang": true,
+          "is_world": false,
+          "is_response": false
+        }
+      ],
+      "world": 2,
+      "response": 5,
+      "missing_note": "父爻缺",
+      "ganzhi_ref": "戊午"
+    },
+    {
+      "name": "火水未济",
+      "position": 4,
+      "lines": [
+        {
+          "line": 1,
+          "liuqin": "父母",
+          "branch": "寅",
+          "wuxing": "木",
+          "yang": false,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 2,
+          "liuqin": "子孙",
+          "branch": "辰",
+          "wuxing": "土",
+          "yang": true,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 3,
+          "liuqin": "兄弟",
+          "branch": "午",
+          "wuxing": "火",
+          "yang": false,
+          "is_world": true,
+          "is_response": false
+        },
+        {
+          "line": 4,
+          "liuqin": "妻财",
+          "branch": "酉",
+          "wuxing": "金",
+          "yang": true,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 5,
+          "liuqin": "子孙",
+          "branch": "未",
+          "wuxing": "土",
+          "yang": false,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 6,
+          "liuqin": "兄弟",
+          "branch": "巳",
+          "wuxing": "火",
+          "yang": true,
+          "is_world": false,
+          "is_response": true
+        }
+      ],
+      "world": 3,
+      "response": 6,
+      "missing_note": "父爻缺",
+      "ganzhi_ref": "甲申"
+    },
+    {
+      "name": "山水蒙",
+      "position": 5,
+      "lines": [
+        {
+          "line": 1,
+          "liuqin": "父母",
+          "branch": "寅",
+          "wuxing": "木",
+          "yang": false,
+          "is_world": false,
+          "is_response": true
+        },
+        {
+          "line": 2,
+          "liuqin": "子孙",
+          "branch": "辰",
+          "wuxing": "土",
+          "yang": true,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 3,
+          "liuqin": "兄弟",
+          "branch": "午",
+          "wuxing": "火",
+          "yang": false,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 4,
+          "liuqin": "子孙",
+          "branch": "戌",
+          "wuxing": "土",
+          "yang": false,
+          "is_world": true,
+          "is_response": false
+        },
+        {
+          "line": 5,
+          "liuqin": "官鬼",
+          "branch": "子",
+          "wuxing": "水",
+          "yang": false,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 6,
+          "liuqin": "父母",
+          "branch": "寅",
+          "wuxing": "木",
+          "yang": true,
+          "is_world": false,
+          "is_response": false
+        }
+      ],
+      "world": 4,
+      "response": 1,
+      "missing_note": "财爻缺",
+      "ganzhi_ref": "庚申"
+    },
+    {
+      "name": "风水涣",
+      "position": 6,
+      "lines": [
+        {
+          "line": 1,
+          "liuqin": "父母",
+          "branch": "寅",
+          "wuxing": "木",
+          "yang": false,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 2,
+          "liuqin": "子孙",
+          "branch": "辰",
+          "wuxing": "土",
+          "yang": true,
+          "is_world": false,
+          "is_response": true
+        },
+        {
+          "line": 3,
+          "liuqin": "兄弟",
+          "branch": "午",
+          "wuxing": "火",
+          "yang": false,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 4,
+          "liuqin": "子孙",
+          "branch": "未",
+          "wuxing": "土",
+          "yang": false,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 5,
+          "liuqin": "兄弟",
+          "branch": "巳",
+          "wuxing": "火",
+          "yang": true,
+          "is_world": true,
+          "is_response": false
+        },
+        {
+          "line": 6,
+          "liuqin": "父母",
+          "branch": "卯",
+          "wuxing": "木",
+          "yang": true,
+          "is_world": false,
+          "is_response": false
+        }
+      ],
+      "world": 5,
+      "response": 2,
+      "missing_note": "财爻缺",
+      "ganzhi_ref": "戊申"
+    },
+    {
+      "name": "天水讼",
+      "position": 7,
+      "lines": [
+        {
+          "line": 1,
+          "liuqin": "父母",
+          "branch": "寅",
+          "wuxing": "木",
+          "yang": false,
+          "is_world": false,
+          "is_response": true
+        },
+        {
+          "line": 2,
+          "liuqin": "子孙",
+          "branch": "辰",
+          "wuxing": "土",
+          "yang": true,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 3,
+          "liuqin": "兄弟",
+          "branch": "午",
+          "wuxing": "火",
+          "yang": false,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 4,
+          "liuqin": "兄弟",
+          "branch": "午",
+          "wuxing": "火",
+          "yang": true,
+          "is_world": true,
+          "is_response": false
+        },
+        {
+          "line": 5,
+          "liuqin": "妻财",
+          "branch": "申",
+          "wuxing": "金",
+          "yang": true,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 6,
+          "liuqin": "子孙",
+          "branch": "戌",
+          "wuxing": "土",
+          "yang": true,
+          "is_world": false,
+          "is_response": false
+        }
+      ],
+      "world": 4,
+      "response": 1,
+      "missing_note": "父爻缺",
+      "ganzhi_ref": "辛未"
+    },
+    {
+      "name": "天火同人",
+      "position": 8,
+      "lines": [
+        {
+          "line": 1,
+          "liuqin": "父母",
+          "branch": "卯",
+          "wuxing": "木",
+          "yang": true,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 2,
+          "liuqin": "子孙",
+          "branch": "丑",
+          "wuxing": "土",
+          "yang": false,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 3,
+          "liuqin": "官鬼",
+          "branch": "亥",
+          "wuxing": "水",
+          "yang": true,
+          "is_world": true,
+          "is_response": false
+        },
+        {
+          "line": 4,
+          "liuqin": "兄弟",
+          "branch": "午",
+          "wuxing": "火",
+          "yang": true,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 5,
+          "liuqin": "妻财",
+          "branch": "申",
+          "wuxing": "金",
+          "yang": true,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 6,
+          "liuqin": "子孙",
+          "branch": "戌",
+          "wuxing": "土",
+          "yang": true,
+          "is_world": false,
+          "is_response": true
+        }
+      ],
+      "world": 3,
+      "response": 6,
+      "missing_note": "",
+      "ganzhi_ref": "壬寅"
+    }
+  ],
+  "坤": [
+    {
+      "name": "坤为地",
+      "position": 1,
+      "lines": [
+        {
+          "line": 1,
+          "liuqin": "兄弟",
+          "branch": "未",
+          "wuxing": "土",
+          "yang": false,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 2,
+          "liuqin": "父母",
+          "branch": "巳",
+          "wuxing": "火",
+          "yang": false,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 3,
+          "liuqin": "官鬼",
+          "branch": "卯",
+          "wuxing": "木",
+          "yang": false,
+          "is_world": false,
+          "is_response": true
+        },
+        {
+          "line": 4,
+          "liuqin": "兄弟",
+          "branch": "丑",
+          "wuxing": "土",
+          "yang": false,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 5,
+          "liuqin": "妻财",
+          "branch": "亥",
+          "wuxing": "水",
+          "yang": false,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 6,
+          "liuqin": "子孙",
+          "branch": "酉",
+          "wuxing": "金",
+          "yang": false,
+          "is_world": true,
+          "is_response": false
+        }
+      ],
+      "world": 6,
+      "response": 3,
+      "missing_note": "(六冲)",
+      "ganzhi_ref": "甲子"
+    },
+    {
+      "name": "地雷复",
+      "position": 2,
+      "lines": [
+        {
+          "line": 1,
+          "liuqin": "妻财",
+          "branch": "子",
+          "wuxing": "水",
+          "yang": true,
+          "is_world": true,
+          "is_response": false
+        },
+        {
+          "line": 2,
+          "liuqin": "官鬼",
+          "branch": "寅",
+          "wuxing": "木",
+          "yang": false,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 3,
+          "liuqin": "兄弟",
+          "branch": "辰",
+          "wuxing": "土",
+          "yang": false,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 4,
+          "liuqin": "兄弟",
+          "branch": "丑",
+          "wuxing": "土",
+          "yang": false,
+          "is_world": false,
+          "is_response": true
+        },
+        {
+          "line": 5,
+          "liuqin": "妻财",
+          "branch": "亥",
+          "wuxing": "水",
+          "yang": false,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 6,
+          "liuqin": "子孙",
+          "branch": "酉",
+          "wuxing": "金",
+          "yang": false,
+          "is_world": false,
+          "is_response": false
+        }
+      ],
+      "world": 1,
+      "response": 4,
+      "missing_note": "父爻缺(六合)",
+      "ganzhi_ref": "甲子"
+    },
+    {
+      "name": "地泽临",
+      "position": 3,
+      "lines": [
+        {
+          "line": 1,
+          "liuqin": "父母",
+          "branch": "巳",
+          "wuxing": "火",
+          "yang": true,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 2,
+          "liuqin": "官鬼",
+          "branch": "卯",
+          "wuxing": "木",
+          "yang": true,
+          "is_world": true,
+          "is_response": false
+        },
+        {
+          "line": 3,
+          "liuqin": "兄弟",
+          "branch": "丑",
+          "wuxing": "土",
+          "yang": false,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 4,
+          "liuqin": "兄弟",
+          "branch": "丑",
+          "wuxing": "土",
+          "yang": false,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 5,
+          "liuqin": "妻财",
+          "branch": "亥",
+          "wuxing": "水",
+          "yang": false,
+          "is_world": false,
+          "is_response": true
+        },
+        {
+          "line": 6,
+          "liuqin": "子孙",
+          "branch": "酉",
+          "wuxing": "金",
+          "yang": false,
+          "is_world": false,
+          "is_response": false
+        }
+      ],
+      "world": 2,
+      "response": 5,
+      "missing_note": "",
+      "ganzhi_ref": "乙卯"
+    },
+    {
+      "name": "地天泰",
+      "position": 4,
+      "lines": [
+        {
+          "line": 1,
+          "liuqin": "妻财",
+          "branch": "子",
+          "wuxing": "水",
+          "yang": true,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 2,
+          "liuqin": "官鬼",
+          "branch": "寅",
+          "wuxing": "木",
+          "yang": true,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 3,
+          "liuqin": "兄弟",
+          "branch": "辰",
+          "wuxing": "土",
+          "yang": true,
+          "is_world": true,
+          "is_response": false
+        },
+        {
+          "line": 4,
+          "liuqin": "兄弟",
+          "branch": "丑",
+          "wuxing": "土",
+          "yang": false,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 5,
+          "liuqin": "妻财",
+          "branch": "亥",
+          "wuxing": "水",
+          "yang": false,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 6,
+          "liuqin": "子孙",
+          "branch": "酉",
+          "wuxing": "金",
+          "yang": false,
+          "is_world": false,
+          "is_response": true
+        }
+      ],
+      "world": 3,
+      "response": 6,
+      "missing_note": "父爻缺(六合)",
+      "ganzhi_ref": "庚辰"
+    },
+    {
+      "name": "雷天大壮",
+      "position": 5,
+      "lines": [
+        {
+          "line": 1,
+          "liuqin": "妻财",
+          "branch": "子",
+          "wuxing": "水",
+          "yang": true,
+          "is_world": false,
+          "is_response": true
+        },
+        {
+          "line": 2,
+          "liuqin": "官鬼",
+          "branch": "寅",
+          "wuxing": "木",
+          "yang": true,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 3,
+          "liuqin": "兄弟",
+          "branch": "辰",
+          "wuxing": "土",
+          "yang": true,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 4,
+          "liuqin": "父母",
+          "branch": "午",
+          "wuxing": "火",
+          "yang": true,
+          "is_world": true,
+          "is_response": false
+        },
+        {
+          "line": 5,
+          "liuqin": "子孙",
+          "branch": "申",
+          "wuxing": "金",
+          "yang": false,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 6,
+          "liuqin": "兄弟",
+          "branch": "戌",
+          "wuxing": "土",
+          "yang": false,
+          "is_world": false,
+          "is_response": false
+        }
+      ],
+      "world": 4,
+      "response": 1,
+      "missing_note": "(六冲)",
+      "ganzhi_ref": "己巳"
+    },
+    {
+      "name": "泽天夬",
+      "position": 6,
+      "lines": [
+        {
+          "line": 1,
+          "liuqin": "妻财",
+          "branch": "子",
+          "wuxing": "水",
+          "yang": true,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 2,
+          "liuqin": "官鬼",
+          "branch": "寅",
+          "wuxing": "木",
+          "yang": true,
+          "is_world": false,
+          "is_response": true
+        },
+        {
+          "line": 3,
+          "liuqin": "兄弟",
+          "branch": "辰",
+          "wuxing": "土",
+          "yang": true,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 4,
+          "liuqin": "妻财",
+          "branch": "亥",
+          "wuxing": "水",
+          "yang": true,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 5,
+          "liuqin": "子孙",
+          "branch": "酉",
+          "wuxing": "金",
+          "yang": true,
+          "is_world": true,
+          "is_response": false
+        },
+        {
+          "line": 6,
+          "liuqin": "兄弟",
+          "branch": "未",
+          "wuxing": "土",
+          "yang": false,
+          "is_world": false,
+          "is_response": false
+        }
+      ],
+      "world": 5,
+      "response": 2,
+      "missing_note": "父爻缺",
+      "ganzhi_ref": "癸巳"
+    },
+    {
+      "name": "水天需",
+      "position": 7,
+      "lines": [
+        {
+          "line": 1,
+          "liuqin": "妻财",
+          "branch": "子",
+          "wuxing": "水",
+          "yang": true,
+          "is_world": false,
+          "is_response": true
+        },
+        {
+          "line": 2,
+          "liuqin": "官鬼",
+          "branch": "寅",
+          "wuxing": "木",
+          "yang": true,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 3,
+          "liuqin": "兄弟",
+          "branch": "辰",
+          "wuxing": "土",
+          "yang": true,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 4,
+          "liuqin": "子孙",
+          "branch": "申",
+          "wuxing": "金",
+          "yang": false,
+          "is_world": true,
+          "is_response": false
+        },
+        {
+          "line": 5,
+          "liuqin": "兄弟",
+          "branch": "戌",
+          "wuxing": "土",
+          "yang": true,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 6,
+          "liuqin": "妻财",
+          "branch": "子",
+          "wuxing": "水",
+          "yang": false,
+          "is_world": false,
+          "is_response": false
+        }
+      ],
+      "world": 4,
+      "response": 1,
+      "missing_note": "父爻缺",
+      "ganzhi_ref": "乙巳"
+    },
+    {
+      "name": "水地比",
+      "position": 8,
+      "lines": [
+        {
+          "line": 1,
+          "liuqin": "兄弟",
+          "branch": "未",
+          "wuxing": "土",
+          "yang": false,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 2,
+          "liuqin": "父母",
+          "branch": "巳",
+          "wuxing": "火",
+          "yang": false,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 3,
+          "liuqin": "官鬼",
+          "branch": "卯",
+          "wuxing": "木",
+          "yang": false,
+          "is_world": true,
+          "is_response": false
+        },
+        {
+          "line": 4,
+          "liuqin": "子孙",
+          "branch": "申",
+          "wuxing": "金",
+          "yang": false,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 5,
+          "liuqin": "兄弟",
+          "branch": "戌",
+          "wuxing": "土",
+          "yang": true,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 6,
+          "liuqin": "妻财",
+          "branch": "子",
+          "wuxing": "水",
+          "yang": false,
+          "is_world": false,
+          "is_response": true
+        }
+      ],
+      "world": 3,
+      "response": 6,
+      "missing_note": "",
+      "ganzhi_ref": "辛亥"
+    }
+  ],
+  "兑": [
+    {
+      "name": "兑为泽",
+      "position": 1,
+      "lines": [
+        {
+          "line": 1,
+          "liuqin": "官鬼",
+          "branch": "巳",
+          "wuxing": "火",
+          "yang": true,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 2,
+          "liuqin": "妻财",
+          "branch": "卯",
+          "wuxing": "木",
+          "yang": true,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 3,
+          "liuqin": "父母",
+          "branch": "丑",
+          "wuxing": "土",
+          "yang": false,
+          "is_world": false,
+          "is_response": true
+        },
+        {
+          "line": 4,
+          "liuqin": "子孙",
+          "branch": "亥",
+          "wuxing": "水",
+          "yang": true,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 5,
+          "liuqin": "兄弟",
+          "branch": "酉",
+          "wuxing": "金",
+          "yang": true,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 6,
+          "liuqin": "父母",
+          "branch": "未",
+          "wuxing": "土",
+          "yang": false,
+          "is_world": true,
+          "is_response": false
+        }
+      ],
+      "world": 6,
+      "response": 3,
+      "missing_note": "(六冲)",
+      "ganzhi_ref": "丙辰"
+    },
+    {
+      "name": "泽水困",
+      "position": 2,
+      "lines": [
+        {
+          "line": 1,
+          "liuqin": "妻财",
+          "branch": "寅",
+          "wuxing": "木",
+          "yang": false,
+          "is_world": true,
+          "is_response": false
+        },
+        {
+          "line": 2,
+          "liuqin": "父母",
+          "branch": "辰",
+          "wuxing": "土",
+          "yang": true,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 3,
+          "liuqin": "官鬼",
+          "branch": "午",
+          "wuxing": "火",
+          "yang": false,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 4,
+          "liuqin": "子孙",
+          "branch": "亥",
+          "wuxing": "水",
+          "yang": true,
+          "is_world": false,
+          "is_response": true
+        },
+        {
+          "line": 5,
+          "liuqin": "兄弟",
+          "branch": "酉",
+          "wuxing": "金",
+          "yang": true,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 6,
+          "liuqin": "父母",
+          "branch": "未",
+          "wuxing": "土",
+          "yang": false,
+          "is_world": false,
+          "is_response": false
+        }
+      ],
+      "world": 1,
+      "response": 4,
+      "missing_note": "(六合)",
+      "ganzhi_ref": "癸未"
+    },
+    {
+      "name": "泽地萃",
+      "position": 3,
+      "lines": [
+        {
+          "line": 1,
+          "liuqin": "父母",
+          "branch": "未",
+          "wuxing": "土",
+          "yang": false,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 2,
+          "liuqin": "官鬼",
+          "branch": "巳",
+          "wuxing": "火",
+          "yang": false,
+          "is_world": true,
+          "is_response": false
+        },
+        {
+          "line": 3,
+          "liuqin": "妻财",
+          "branch": "卯",
+          "wuxing": "木",
+          "yang": false,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 4,
+          "liuqin": "子孙",
+          "branch": "亥",
+          "wuxing": "水",
+          "yang": true,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 5,
+          "liuqin": "兄弟",
+          "branch": "酉",
+          "wuxing": "金",
+          "yang": true,
+          "is_world": false,
+          "is_response": true
+        },
+        {
+          "line": 6,
+          "liuqin": "父母",
+          "branch": "未",
+          "wuxing": "土",
+          "yang": false,
+          "is_world": false,
+          "is_response": false
+        }
+      ],
+      "world": 2,
+      "response": 5,
+      "missing_note": "",
+      "ganzhi_ref": "壬戌"
+    },
+    {
+      "name": "泽山咸",
+      "position": 4,
+      "lines": [
+        {
+          "line": 1,
+          "liuqin": "父母",
+          "branch": "辰",
+          "wuxing": "土",
+          "yang": false,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 2,
+          "liuqin": "官鬼",
+          "branch": "午",
+          "wuxing": "火",
+          "yang": false,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 3,
+          "liuqin": "兄弟",
+          "branch": "申",
+          "wuxing": "金",
+          "yang": true,
+          "is_world": true,
+          "is_response": false
+        },
+        {
+          "line": 4,
+          "liuqin": "子孙",
+          "branch": "亥",
+          "wuxing": "水",
+          "yang": true,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 5,
+          "liuqin": "兄弟",
+          "branch": "酉",
+          "wuxing": "金",
+          "yang": true,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 6,
+          "liuqin": "父母",
+          "branch": "未",
+          "wuxing": "土",
+          "yang": false,
+          "is_world": false,
+          "is_response": true
+        }
+      ],
+      "world": 3,
+      "response": 6,
+      "missing_note": "财爻缺",
+      "ganzhi_ref": "丁酉"
+    },
+    {
+      "name": "水山蹇",
+      "position": 5,
+      "lines": [
+        {
+          "line": 1,
+          "liuqin": "父母",
+          "branch": "辰",
+          "wuxing": "土",
+          "yang": false,
+          "is_world": false,
+          "is_response": true
+        },
+        {
+          "line": 2,
+          "liuqin": "官鬼",
+          "branch": "午",
+          "wuxing": "火",
+          "yang": false,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 3,
+          "liuqin": "兄弟",
+          "branch": "申",
+          "wuxing": "金",
+          "yang": true,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 4,
+          "liuqin": "兄弟",
+          "branch": "申",
+          "wuxing": "金",
+          "yang": false,
+          "is_world": true,
+          "is_response": false
+        },
+        {
+          "line": 5,
+          "liuqin": "父母",
+          "branch": "戌",
+          "wuxing": "土",
+          "yang": true,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 6,
+          "liuqin": "子孙",
+          "branch": "子",
+          "wuxing": "水",
+          "yang": false,
+          "is_world": false,
+          "is_response": false
+        }
+      ],
+      "world": 4,
+      "response": 1,
+      "missing_note": "财爻缺",
+      "ganzhi_ref": "甲戌"
+    },
+    {
+      "name": "地山谦",
+      "position": 6,
+      "lines": [
+        {
+          "line": 1,
+          "liuqin": "父母",
+          "branch": "辰",
+          "wuxing": "土",
+          "yang": false,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 2,
+          "liuqin": "官鬼",
+          "branch": "午",
+          "wuxing": "火",
+          "yang": false,
+          "is_world": false,
+          "is_response": true
+        },
+        {
+          "line": 3,
+          "liuqin": "兄弟",
+          "branch": "申",
+          "wuxing": "金",
+          "yang": true,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 4,
+          "liuqin": "父母",
+          "branch": "丑",
+          "wuxing": "土",
+          "yang": false,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 5,
+          "liuqin": "子孙",
+          "branch": "亥",
+          "wuxing": "水",
+          "yang": false,
+          "is_world": true,
+          "is_response": false
+        },
+        {
+          "line": 6,
+          "liuqin": "兄弟",
+          "branch": "酉",
+          "wuxing": "金",
+          "yang": false,
+          "is_world": false,
+          "is_response": false
+        }
+      ],
+      "world": 5,
+      "response": 2,
+      "missing_note": "财爻缺",
+      "ganzhi_ref": "戊戌"
+    },
+    {
+      "name": "雷山小过",
+      "position": 7,
+      "lines": [
+        {
+          "line": 1,
+          "liuqin": "父母",
+          "branch": "辰",
+          "wuxing": "土",
+          "yang": false,
+          "is_world": false,
+          "is_response": true
+        },
+        {
+          "line": 2,
+          "liuqin": "官鬼",
+          "branch": "午",
+          "wuxing": "火",
+          "yang": false,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 3,
+          "liuqin": "兄弟",
+          "branch": "申",
+          "wuxing": "金",
+          "yang": true,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 4,
+          "liuqin": "官鬼",
+          "branch": "午",
+          "wuxing": "火",
+          "yang": true,
+          "is_world": true,
+          "is_response": false
+        },
+        {
+          "line": 5,
+          "liuqin": "兄弟",
+          "branch": "申",
+          "wuxing": "金",
+          "yang": false,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 6,
+          "liuqin": "父母",
+          "branch": "戌",
+          "wuxing": "土",
+          "yang": false,
+          "is_world": false,
+          "is_response": false
+        }
+      ],
+      "world": 4,
+      "response": 1,
+      "missing_note": "孙财爻缺",
+      "ganzhi_ref": "辛酉"
+    },
+    {
+      "name": "雷泽归妹",
+      "position": 8,
+      "lines": [
+        {
+          "line": 1,
+          "liuqin": "官鬼",
+          "branch": "巳",
+          "wuxing": "火",
+          "yang": true,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 2,
+          "liuqin": "妻财",
+          "branch": "卯",
+          "wuxing": "木",
+          "yang": true,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 3,
+          "liuqin": "父母",
+          "branch": "丑",
+          "wuxing": "土",
+          "yang": false,
+          "is_world": true,
+          "is_response": false
+        },
+        {
+          "line": 4,
+          "liuqin": "官鬼",
+          "branch": "午",
+          "wuxing": "火",
+          "yang": true,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 5,
+          "liuqin": "兄弟",
+          "branch": "申",
+          "wuxing": "金",
+          "yang": false,
+          "is_world": false,
+          "is_response": false
+        },
+        {
+          "line": 6,
+          "liuqin": "父母",
+          "branch": "戌",
+          "wuxing": "土",
+          "yang": false,
+          "is_world": false,
+          "is_response": true
+        }
+      ],
+      "world": 3,
+      "response": 6,
+      "missing_note": "孙爻缺",
+      "ganzhi_ref": "癸卯"
+    }
+  ]
+}
