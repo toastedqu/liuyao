@@ -2,9 +2,11 @@ __pycache__/
 *.py[cod]
 .coverage
 .env
+.pipcache/
 .pytest_cache/
 .ruff_cache/
 .venv/
 dist/
 data/generated/
 scrape_zengshan_buyi.py
+implementation_plan.md
