@@ -8,8 +8,17 @@ LLM response) and checks the returned ``ValidationResult``.
 
 from __future__ import annotations
 
-from app.divination.validator import validate_divination_conclusion
-from app.llm.schemas import LineAssertion, LineProperty, RiskItem, SourceCitation
+from app.divination.validator import (
+    validate_divination_conclusion,
+    validate_useful_god_decision,
+)
+from app.llm.schemas import (
+    LineAssertion,
+    LineProperty,
+    RiskItem,
+    SourceCitation,
+    UsefulGodDecision,
+)
 from tests.llm.conftest import make_conclusion
 
 
@@ -262,7 +271,7 @@ def test_line_claim_in_summary_must_move_to_a_judgement(sample_context) -> None:
     assert "line_claim_outside_judgement" in {issue.code for issue in result.issues}
 
 
-def test_useful_god_cannot_override_deterministic_selection(sample_context) -> None:
+def test_interpretation_cannot_override_preselected_useful_god(sample_context) -> None:
     conclusion = make_conclusion()
     conclusion.useful_god.useful_god = "兄弟"
 
@@ -277,7 +286,8 @@ def test_useful_god_accepts_matching_relative_and_selected_line(
     context = sample_context.model_copy(
         update={
             "useful_god": (
-                '{"status":"selected","useful_relative":"妻财",'
+                '{"status":"selected","selection_mode":"relative",'
+                '"useful_relative":"妻财",'
                 '"selected_line":5}'
             )
         }
@@ -292,7 +302,8 @@ def test_useful_god_rejects_wrong_selected_line(sample_context) -> None:
     context = sample_context.model_copy(
         update={
             "useful_god": (
-                '{"status":"selected","useful_relative":"妻财",'
+                '{"status":"selected","selection_mode":"relative",'
+                '"useful_relative":"妻财",'
                 '"selected_line":5}'
             )
         }
@@ -303,6 +314,48 @@ def test_useful_god_rejects_wrong_selected_line(sample_context) -> None:
     result = validate_divination_conclusion(conclusion, context)
 
     assert "useful_god_conflict" in {issue.code for issue in result.issues}
+
+
+def test_world_useful_god_requires_world_line_wording(sample_context) -> None:
+    context = sample_context.model_copy(
+        update={
+            "useful_god": (
+                '{"status":"selected","selection_mode":"world",'
+                '"useful_relative":"子孙","selected_line":1}'
+            )
+        }
+    )
+    conclusion = make_conclusion()
+    conclusion.useful_god.useful_god = "初爻世爻（子孙）"
+    assert validate_divination_conclusion(conclusion, context).valid is True
+
+    conclusion.useful_god.useful_god = "初爻子孙"
+    result = validate_divination_conclusion(conclusion, context)
+    assert "useful_god_conflict" in {issue.code for issue in result.issues}
+
+
+def test_useful_god_decision_citations_must_be_verbatim(sample_context) -> None:
+    decision = UsefulGodDecision(
+        category="求财",
+        target="求财",
+        mode="relative",
+        useful_relative="妻财",
+        rationale="用户询问财物。",
+        citations=[
+            SourceCitation(
+                source_id="008_用神章:p0001",
+                quote="用神旺相，诸事可成",
+            )
+        ],
+    )
+    assert validate_useful_god_decision(
+        decision,
+        sample_context.sources,
+    ).valid is True
+
+    decision.citations[0].quote = "并非逐字原文"
+    result = validate_useful_god_decision(decision, sample_context.sources)
+    assert "citation_quote_mismatch" in {issue.code for issue in result.issues}
 
 
 def test_forbidden_term_is_rejected(sample_context) -> None:

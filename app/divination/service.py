@@ -323,7 +323,7 @@ class DivinationService:
                 category=corpus_category,
                 fact_tags=rule_tags,
                 hexagram_name=result.chart.primary.name,
-                keywords=result.request.question,
+                keywords=category.value,
                 example_limit=4,
                 fts_limit=8,
             )

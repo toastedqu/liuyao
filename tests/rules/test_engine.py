@@ -12,6 +12,7 @@ from app.rules.models import (
     Element,
     HiddenSpiritContext,
     Relative,
+    RuleAnalysis,
     UsefulGodChoice,
 )
 
@@ -115,7 +116,7 @@ def relative_choice(
 def analyze_with_relative(
     context: RuleContext,
     relative: Relative = Relative.WEALTH,
-) -> object:
+) -> RuleAnalysis:
     return RuleEngine().analyze(context, relative_choice(relative))
 
 
