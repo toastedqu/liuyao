@@ -16,7 +16,7 @@ class Settings(BaseSettings):
         case_sensitive=True,
     )
 
-    LLM_PROVIDER: Literal["openai", "azure_openai", "anthropic"] = "azure_openai"
+    LLM_PROVIDER: Literal["openai", "azure_openai", "anthropic"] = "openai"
 
     OPENAI_API_KEY: str | None = None
     OPENAI_MODEL: str | None = None

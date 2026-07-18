@@ -14,11 +14,14 @@ from app.divination.service import DivinationService, DivinationValidationError
 from app.knowledge.ingest import build_database
 from app.llm.base import Message
 from app.llm.schemas import (
+    CaseAnalysis,
+    CaseComparison,
     DivinationConclusion,
     Judgement,
     MonthDayAnalysis,
     MovingLinesAnalysis,
     OverallConclusion,
+    QuestionApplication,
     RisksAndUncertainties,
     SourceCitation,
     SpecialPatternsAnalysis,
@@ -30,6 +33,9 @@ from app.main import app
 
 
 ROOT = Path(__file__).resolve().parents[2]
+CASE_ID = "081_囤买卖货章:example0003"
+CASE_QUESTION_ID = f"{CASE_ID}:question"
+CASE_JUDGEMENT_ID = f"{CASE_ID}:judgement"
 
 
 class SequenceProvider:
@@ -100,9 +106,60 @@ def conclusion(*, valid_source: bool = True) -> DivinationConclusion:
     )
     return DivinationConclusion(
         overall=OverallConclusion(
-            outlook="不确定",
-            summary="现有证据不足以作确定结论",
+            outlook="凶",
+            summary="本次求财偏难",
             judgements=[judgement],
+        ),
+        question_application=QuestionApplication(
+            focus="本次所问求财能否办成",
+            favorable=[],
+            adverse=[
+                Judgement(
+                    statement="本卦不利因素应落实为本次求财推进困难。",
+                    fact_ids=["fact-primary-hexagram"],
+                )
+            ],
+            synthesis=Judgement(
+                statement="综合本卦事实，本次求财偏难，不只是抽象术语判断。",
+                fact_ids=["fact-primary-hexagram"],
+            ),
+        ),
+        case_analysis=CaseAnalysis(
+            comparisons=[
+                CaseComparison(
+                    example_id=CASE_ID,
+                    similarities=Judgement(
+                        statement="本卦与原例同属求财问题，可比较财事成败。",
+                        fact_ids=["fact-primary-hexagram"],
+                        citations=[
+                            SourceCitation(
+                                source_id=CASE_QUESTION_ID,
+                                quote="占买台连纸有利否",
+                            )
+                        ],
+                    ),
+                    differences=Judgement(
+                        statement="本卦卦象并非原例复之颐，不能直接照搬结论。",
+                        fact_ids=["fact-primary-hexagram"],
+                        citations=[
+                            SourceCitation(
+                                source_id=CASE_QUESTION_ID,
+                                quote="复之颐",
+                            )
+                        ],
+                    ),
+                    application=Judgement(
+                        statement="原例把财爻旺衰落实为囤货获利时机；本问只迁移其判断方法。",
+                        fact_ids=["fact-primary-hexagram"],
+                        citations=[
+                            SourceCitation(
+                                source_id=CASE_JUDGEMENT_ID,
+                                quote="秋冬必长，有纸多收",
+                            )
+                        ],
+                    ),
+                )
+            ]
         ),
         useful_god=UsefulGodAnalysis(useful_god="妻财", judgements=[]),
         month_day=MonthDayAnalysis(judgements=[]),
@@ -186,7 +243,7 @@ async def test_full_pipeline_retries_invalid_citation_once(knowledge_db: Path) -
         DivinationRequest.model_validate(request_payload())
     )
 
-    assert response.interpretation.overall.outlook == "不确定"
+    assert response.interpretation.overall.outlook == "凶"
     assert len(provider.calls) == 3
     assert provider.schemas == [
         UsefulGodDecision,
@@ -195,6 +252,9 @@ async def test_full_pipeline_retries_invalid_citation_once(knowledge_db: Path) -
     ]
     assert "上一次的结构化结果未通过校验" in provider.calls[2][-1].content
     assert response.sources
+    assert response.case_evidence
+    assert len(response.case_evidence) == 1
+    assert response.case_evidence[0].judgement.content_type.value == "example_judgement"
     assert all(not source.is_editorial for source in response.sources)
     assert any(source.source_id == "008_用神章:p0006" for source in response.sources)
 
@@ -240,12 +300,16 @@ def test_divination_api_returns_structured_result(
 
     assert response.status_code == 200
     payload = response.json()
-    assert payload["interpretation"]["overall"]["outlook"] == "不确定"
+    assert payload["interpretation"]["overall"]["outlook"] == "凶"
     assert payload["sources"]
+    assert payload["case_evidence"]
+    assert len(payload["case_evidence"]) == 1
+    assert payload["case_evidence"][0]["match_reasons"]
     assert payload["input_summary"]["category"] == "求财"
     assert payload["useful_god"]["selection_mode"] == "relative"
     assert payload["useful_god"]["useful_relative"] == "妻财"
     assert len(provider.calls) == 2
+    assert len(provider.calls[1][1].content) < 20_000
 
 
 def test_question_with_multiple_topics_is_classified_by_model(

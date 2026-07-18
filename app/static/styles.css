@@ -125,6 +125,12 @@ details {
   margin: 8px 0;
 }
 
+.case-evidence {
+  margin: 16px 0;
+  padding: 0 14px 12px;
+  border: 1px solid #d0d7de;
+}
+
 blockquote {
   margin: 8px 0 8px 18px;
   padding-left: 12px;

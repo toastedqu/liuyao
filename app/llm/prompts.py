@@ -11,7 +11,7 @@ from __future__ import annotations
 import json
 
 from app.llm.base import Message
-from app.llm.context import DivinationRequestContext, SourceContext
+from app.llm.context import DivinationRequestContext, ExampleContext, SourceContext
 from app.llm.schemas import DivinationConclusion, UsefulGodDecision
 
 #: Representative terms from other divination schools, modern idioms, or
@@ -57,7 +57,7 @@ SYSTEM_PROMPT = """\
 你是依据《增删卜易》原文断卦的助手。你必须严格遵守以下规则：
 
 1. 不得重新排盘，也不得修改用户消息中给出的任何排盘事实、前置模型判定并由代码定位的用神或应期候选，只能引用它们。
-2. 不得使用《增删卜易》原文之外的六爻知识、口诀或个人推断补充规则依据。
+2. “规则与理论原文”用于确定判断规则；“候选卦例”用于展示原书如何把规则落实到具体所问事项。不得使用《增删卜易》原文之外的规则，但必须在本卦事实支撑下比较卦例并作有边界的类比；类比本身不是新增规则。
 3. 不得引入其他占卜流派、神煞或现代口诀，包括但不限于：{forbidden_terms}。
 4. 不得编造不存在的章节、段落引用或引文内容；引用原文必须逐字摘录用户消息中提供的原文，不得转述、概括、增删或意译。
 5. 不得把编辑性按语（如「乾按」「提要」）伪装成野鹤或觉子的原文断语。
@@ -66,8 +66,13 @@ SYSTEM_PROMPT = """\
 8. 只能输出符合给定 JSON Schema 的结构化结果，不得输出任何 Schema 之外的文字、解释或 Markdown。
 9. useful_god.useful_god 必须保留用户消息中的用神方式、六亲和已定位爻位；不得在断卦阶段重新选择用神或指定代码未选定的爻位。
 10. 总结、格局名称和风险描述不得夹带具体爻位属性或应期；这些内容必须放在可附带事实、引文和 line_assertions 的 judgement 中。
+11. question_application 必须把旺衰、生克、空破、动变等抽象结论翻译成用户所问之事的具体含义；不得只复述术语。synthesis 必须直接回答用户的问题，并引用本卦 fact_id。
+12. 有候选卦例时，case_analysis 必须比较系统提供的一个最相关实例，分别说明相似点、关键差异和可迁移结论。similarities、differences、application 每项都必须同时引用该卦例原文和本卦 fact_id，其中 application 必须引用该例的“原断语与应验”；同卦、同占类不等于结论必然相同。
+13. 证据明显偏向一方时必须在“吉、凶、平”中给出方向，不得因为没有与现代问题逐字相同的原文或没有完全相同的卦例就选择“不确定”。只有吉凶事实直接冲突且无法依原文与实例分出主次时才可选择“不确定”，并在 favorable、adverse 和 synthesis 中写明冲突。
+14. 输出应简明：每个分析部分只保留一至两条最关键判断，每条只引用支撑该句所必需的 fact_id 和引文，不要穷举所有事实。
+15. line_assertions 只能引用“排盘事实标签”中明确显示了“属性=”的 fact_id，且属性、爻位和布尔值必须完全一致；其他一般事实只能放在 fact_ids 中。
 
-如果原文证据不足以支持某个判断，必须在相应位置说明证据不足，不能用自己的六爻知识弥补空白。
+如果某项细节证据不足，应把该细节列为限制；不能因此自动把整个问题判为“不确定”，也不能用自己的六爻知识弥补空白。
 """
 
 
@@ -101,6 +106,21 @@ def _render_source(source) -> str:
     return f"- {source.source_id}（{source.chapter}）：{source.text}"
 
 
+def _render_example(example: ExampleContext) -> str:
+    reasons = "；".join(example.match_reasons) or "同占类候选"
+    parts = [
+        f"### {example.example_id}（{example.chapter}；匹配分={example.match_score:g}；{reasons}）"
+    ]
+    for label, source in (
+        ("原占问", example.question),
+        ("原卦盘", example.chart),
+        ("原断语与应验", example.judgement),
+    ):
+        if source is not None:
+            parts.append(f"[{label} | {source.source_id}]\n{source.text}")
+    return "\n".join(parts)
+
+
 def build_useful_god_selection_user_message(
     question: str,
     sources: list[SourceContext],
@@ -108,7 +128,6 @@ def build_useful_god_selection_user_message(
 ) -> str:
     """Build the first-stage request that classifies the question's useful god."""
     sources_block = "\n".join(_render_source(source) for source in sources)
-    schema_json = json.dumps(response_schema.model_json_schema(), ensure_ascii=False)
     return f"""\
 所占之事：{question}
 
@@ -117,8 +136,8 @@ def build_useful_god_selection_user_message(
 可引用的《增删卜易》用神原文：
 {sources_block}
 
-请只输出一个符合以下 JSON Schema 的 JSON 对象，不要输出任何额外文字：
-{schema_json}
+请通过 Provider 已提供的 {response_schema.__name__} 结构化输出格式返回结果，
+不要输出任何额外文字。
 """
 
 
@@ -139,8 +158,17 @@ def build_user_message(context: DivinationRequestContext, response_schema: type[
     """Serialize the full request context plus the required output schema."""
     facts_block = "\n".join(_render_fact(f) for f in context.facts) or "（无）"
     timing_block = "\n".join(_render_timing_candidate(c) for c in context.timing_candidates) or "（无可用候选，须说明证据不足）"
-    sources_block = "\n".join(_render_source(s) for s in context.sources) or "（无检索结果）"
-    schema_json = json.dumps(response_schema.model_json_schema(), ensure_ascii=False)
+    example_source_ids = {
+        source.source_id
+        for example in context.examples
+        for source in (example.question, example.chart, example.judgement)
+        if source is not None
+    }
+    theory_sources = [
+        source for source in context.sources if source.source_id not in example_source_ids
+    ]
+    sources_block = "\n".join(_render_source(s) for s in theory_sources) or "（无检索结果）"
+    examples_block = "\n\n".join(_render_example(e) for e in context.examples) or "（无匹配卦例）"
 
     return f"""\
 所占之事：{context.question}
@@ -148,7 +176,7 @@ def build_user_message(context: DivinationRequestContext, response_schema: type[
 用神：{context.useful_god}
 
 结构化排盘（唯一可信的卦象事实来源，不得更改）：
-{json.dumps(context.chart_summary, ensure_ascii=False, indent=2)}
+{json.dumps(context.chart_summary, ensure_ascii=False, separators=(",", ":"))}
 
 排盘事实标签：
 {facts_block}
@@ -156,11 +184,16 @@ def build_user_message(context: DivinationRequestContext, response_schema: type[
 应期候选（只能从中选择，不得新增）：
 {timing_block}
 
-检索到的《增删卜易》原文（引用必须逐字摘录自此处）：
+规则与理论原文（用于确定规则，引用必须逐字摘录自此处）：
 {sources_block}
 
-请只输出一个符合以下 JSON Schema 的 JSON 对象，不要输出任何额外文字：
-{schema_json}
+候选卦例（代码只做预筛；须比较相似点和差异后才能迁移原断）：
+{examples_block}
+
+请先在 question_application 中把卦象事实映射到“所占之事”，再在 case_analysis 中用所提供的一个卦例检验这个映射，最后给出有方向的 overall 结论。
+
+请通过 Provider 已提供的 {response_schema.__name__} 结构化输出格式返回结果，
+不要输出任何额外文字。
 """
 
 

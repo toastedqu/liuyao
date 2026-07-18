@@ -12,7 +12,11 @@ from app.divination.validator import (
     validate_divination_conclusion,
     validate_useful_god_decision,
 )
+from app.llm.context import ExampleContext, SourceContext
 from app.llm.schemas import (
+    CaseAnalysis,
+    CaseComparison,
+    Judgement,
     LineAssertion,
     LineProperty,
     RiskItem,
@@ -22,10 +26,140 @@ from app.llm.schemas import (
 from tests.llm.conftest import make_conclusion
 
 
+def _context_with_case(sample_context):
+    question = SourceContext(
+        source_id="076_求财章:example0001:question",
+        chapter="求财章",
+        text="占求财，得泽火革。",
+    )
+    judgement = SourceContext(
+        source_id="076_求财章:example0001:judgement",
+        chapter="求财章",
+        text="断曰：财爻不现，如缘木以求鱼也。",
+    )
+    return sample_context.model_copy(
+        update={
+            "sources": [*sample_context.sources, question, judgement],
+            "examples": [
+                ExampleContext(
+                    example_id="076_求财章:example0001",
+                    chapter="求财章",
+                    match_score=8.5,
+                    match_reasons=["同占类：求财"],
+                    question=question,
+                    judgement=judgement,
+                )
+            ],
+        }
+    )
+
+
+def _valid_case_analysis() -> CaseAnalysis:
+    return CaseAnalysis(
+        comparisons=[
+            CaseComparison(
+                example_id="076_求财章:example0001",
+                similarities=Judgement(
+                    statement="本问与原例同属求财。",
+                    fact_ids=["fact-0001"],
+                    citations=[
+                        SourceCitation(
+                            source_id="076_求财章:example0001:question",
+                            quote="占求财",
+                        )
+                    ],
+                ),
+                differences=Judgement(
+                    statement="本卦须以自己的月破事实区别于原例。",
+                    fact_ids=["fact-0001"],
+                    citations=[
+                        SourceCitation(
+                            source_id="076_求财章:example0001:judgement",
+                            quote="财爻不现",
+                        )
+                    ],
+                ),
+                application=Judgement(
+                    statement="原例断财难求，本问只迁移其权衡方法。",
+                    fact_ids=["fact-0001"],
+                    citations=[
+                        SourceCitation(
+                            source_id="076_求财章:example0001:judgement",
+                            quote="如缘木以求鱼也",
+                        )
+                    ],
+                ),
+            )
+        ]
+    )
+
+
 def test_valid_conclusion_passes(sample_context, sample_conclusion) -> None:
     result = validate_divination_conclusion(sample_conclusion, sample_context)
     assert result.valid is True
     assert result.issues == []
+
+
+def test_question_synthesis_must_use_current_chart_fact(sample_context) -> None:
+    conclusion = make_conclusion()
+    conclusion.question_application.synthesis.fact_ids = []
+    conclusion.question_application.synthesis.citations = [
+        SourceCitation(
+            source_id="008_用神章:p0001",
+            quote="用神旺相，诸事可成",
+        )
+    ]
+
+    result = validate_divination_conclusion(conclusion, sample_context)
+
+    assert "question_synthesis_missing_current_fact" in {
+        issue.code for issue in result.issues
+    }
+
+
+def test_uncertain_outlook_requires_explicit_two_sided_conflict(sample_context) -> None:
+    conclusion = make_conclusion()
+    conclusion.overall.outlook = "不确定"
+
+    result = validate_divination_conclusion(conclusion, sample_context)
+
+    assert "uncertain_without_explicit_conflict" in {
+        issue.code for issue in result.issues
+    }
+
+
+def test_provided_cases_must_be_compared(sample_context) -> None:
+    context = _context_with_case(sample_context)
+
+    result = validate_divination_conclusion(make_conclusion(), context)
+
+    assert "case_comparison_required" in {issue.code for issue in result.issues}
+
+
+def test_traceable_case_comparison_passes(sample_context) -> None:
+    context = _context_with_case(sample_context)
+    conclusion = make_conclusion()
+    conclusion.case_analysis = _valid_case_analysis()
+
+    assert validate_divination_conclusion(conclusion, context).valid is True
+
+
+def test_case_application_must_cite_original_outcome(sample_context) -> None:
+    context = _context_with_case(sample_context)
+    conclusion = make_conclusion()
+    conclusion.case_analysis = _valid_case_analysis()
+    conclusion.case_analysis.comparisons[0].application.citations = [
+        SourceCitation(
+            source_id="076_求财章:example0001:question",
+            quote="占求财",
+        )
+    ]
+
+    result = validate_divination_conclusion(conclusion, context)
+
+    assert "case_application_missing_outcome" in {
+        issue.code for issue in result.issues
+    }
 
 
 def test_unknown_fact_id_is_rejected(sample_context) -> None:

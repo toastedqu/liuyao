@@ -53,6 +53,20 @@ class SourceContext(BaseModel):
     text: str = Field(min_length=1, description="逐字原文，citation.quote 必须是其子串")
 
 
+class ExampleContext(BaseModel):
+    """One complete worked example selected for explicit analogical reasoning."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    example_id: str = Field(min_length=1)
+    chapter: str = Field(min_length=1)
+    match_score: float = Field(ge=0)
+    match_reasons: list[str] = Field(default_factory=list)
+    question: SourceContext | None = None
+    chart: SourceContext | None = None
+    judgement: SourceContext
+
+
 class TimingCandidateContext(BaseModel):
     """One code-generated 应期 candidate the LLM may choose from."""
 
@@ -81,3 +95,4 @@ class DivinationRequestContext(BaseModel):
     facts: list[FactContext] = Field(default_factory=list)
     timing_candidates: list[TimingCandidateContext] = Field(default_factory=list)
     sources: list[SourceContext] = Field(default_factory=list)
+    examples: list[ExampleContext] = Field(default_factory=list)

@@ -9,6 +9,7 @@ import json
 import pytest
 
 from app.llm.base import Message
+from app.llm.context import ExampleContext, SourceContext
 from app.llm.prompts import (
     FORBIDDEN_TERMS,
     USEFUL_GOD_SYSTEM_PROMPT,
@@ -31,6 +32,9 @@ def test_system_prompt_lists_all_forbidden_actions() -> None:
     assert "乾按" in prompt
     assert "只能从用户消息给出的应期候选中选择" in prompt
     assert "line_assertions" in prompt
+    assert "候选卦例" in prompt
+    assert "不得因为没有与现代问题逐字相同" in prompt
+    assert "明确显示了“属性=”的 fact_id" in prompt
 
 
 def test_system_prompt_includes_forbidden_terms() -> None:
@@ -58,10 +62,48 @@ def test_build_user_message_includes_all_context_sections(sample_context) -> Non
     assert "代占" not in text
 
 
+def test_build_user_message_groups_worked_examples_separately(sample_context) -> None:
+    question = SourceContext(
+        source_id="076_求财章:example0001:question",
+        chapter="求财章",
+        text="占求财，得泽火革。",
+    )
+    judgement = SourceContext(
+        source_id="076_求财章:example0001:judgement",
+        chapter="求财章",
+        text="断曰：如缘木以求鱼也。",
+    )
+    context = sample_context.model_copy(
+        update={
+            "sources": [*sample_context.sources, question, judgement],
+            "examples": [
+                ExampleContext(
+                    example_id="076_求财章:example0001",
+                    chapter="求财章",
+                    match_score=8.5,
+                    match_reasons=["同占类：求财"],
+                    question=question,
+                    judgement=judgement,
+                )
+            ],
+        }
+    )
+
+    text = build_user_message(context, DivinationConclusion)
+
+    assert "候选卦例" in text
+    assert "076_求财章:example0001" in text
+    assert "原断语与应验" in text
+    assert "同占类：求财" in text
+    theory_block = text.split("候选卦例", maxsplit=1)[0]
+    assert "076_求财章:example0001:judgement" not in theory_block
+
+
 def test_build_user_message_embeds_json_schema(sample_context) -> None:
     text = build_user_message(sample_context, DivinationConclusion)
     schema_json = json.dumps(DivinationConclusion.model_json_schema(), ensure_ascii=False)
-    assert schema_json in text
+    assert "Provider 已提供的 DivinationConclusion" in text
+    assert schema_json not in text
 
 
 def test_useful_god_selection_prompt_uses_question_and_source_only(
@@ -76,10 +118,11 @@ def test_useful_god_selection_prompt_uses_question_and_source_only(
     assert "008_用神章:p0001" in text
     assert "model-classified" not in text
     assert "chart_summary" not in text
+    assert "Provider 已提供的 UsefulGodDecision" in text
     assert json.dumps(
         UsefulGodDecision.model_json_schema(),
         ensure_ascii=False,
-    ) in text
+    ) not in text
 
 
 def test_useful_god_selection_messages_use_dedicated_system_prompt(

@@ -24,6 +24,7 @@ def test_frontend_marks_line_order_and_has_six_groups() -> None:
     script = client.get("/static/app.js").text
     assert '["初爻", "二爻", "三爻", "四爻", "五爻", "上爻"]' in script
     assert "/api/v1/categories" not in script
+    assert "卦例类比" in script
 
 
 def test_unsupported_calendar_year_returns_structured_422() -> None:

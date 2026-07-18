@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+from app.knowledge.retrieval import Retriever
 from app.knowledge.taxonomy import FIXED_PICK_CHAPTER_IDS
 
 
@@ -31,6 +32,7 @@ def test_by_category_routes_to_correct_chapters(retriever):
     assert all("婚姻" in p.category_tags for p in marriage)
 
     assert {p.chapter_id for p in wealth}.isdisjoint({p.chapter_id for p in marriage})
+    assert all(p.example_id is None for p in wealth + marriage)
 
 
 def test_by_fact_tags_routes_month_break_to_chapter_034(retriever):
@@ -58,6 +60,27 @@ def test_score_examples_ranks_hexagram_match_highest(retriever):
     assert any("hexagram" in reason for reason in top.reasons)
 
 
+def test_score_examples_matches_full_name_to_compound_example_name(retriever):
+    scored = retriever.score_examples(
+        category="求财",
+        hexagram_name="水火既济",
+        limit=5,
+    )
+
+    assert scored
+    assert scored[0].example.example_id == "076_求财章:example0004"
+    assert "hexagram:水火既济" in scored[0].reasons
+
+
+def test_hexagram_matching_preserves_primary_changed_direction() -> None:
+    matches = Retriever._hexagram_role_matches
+
+    assert matches("泽火革", "革之既济", role="primary")
+    assert matches("水火既济", "革之既济", role="changed")
+    assert not matches("水火既济", "革之既济", role="primary")
+    assert not matches("泽火革", "革之既济", role="changed")
+
+
 def test_score_examples_without_any_match_is_empty(retriever):
     scored = retriever.score_examples(category="不存在的占类", hexagram_name="不存在的卦")
     assert scored == []
@@ -74,9 +97,22 @@ def test_score_examples_deterministic_ordering(retriever):
     assert [s.example.example_id for s in first] == [s.example.example_id for s in second]
 
 
+def test_score_examples_uses_question_wording_to_rank_specific_cases(retriever):
+    scored = retriever.score_examples(
+        category="求财",
+        query_text="我想问借贷能否办成",
+        limit=5,
+    )
+
+    assert scored
+    assert scored[0].example.example_id == "076_求财章:example0003"
+    assert any(reason == "question_terms:借贷" for reason in scored[0].reasons)
+
+
 def test_keyword_search_stage(retriever):
     results = retriever.keyword_search("用神", limit=5)
     assert results
+    assert all(result.example_id is None for result in results)
 
 
 def test_retrieve_prioritizes_fixed_pick_first(retriever):

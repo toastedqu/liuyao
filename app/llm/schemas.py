@@ -15,7 +15,7 @@ from __future__ import annotations
 from enum import StrEnum
 from typing import Iterator, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 
 class LineProperty(StrEnum):
@@ -43,6 +43,14 @@ class SourceCitation(BaseModel):
 
     source_id: str = Field(min_length=1, description="必须是本次检索结果中的 source_id")
     quote: str = Field(min_length=1, description="从该出处逐字摘录的原文，禁止转述、增删或概括")
+
+    @field_validator("source_id", "quote")
+    @classmethod
+    def reject_blank_text(cls, value: str) -> str:
+        stripped = value.strip()
+        if not stripped:
+            raise ValueError("引用出处和引文不得为空白")
+        return stripped
 
 
 class UsefulGodDecision(BaseModel):
@@ -115,6 +123,38 @@ class Judgement(BaseModel):
     fact_ids: list[str] = Field(default_factory=list)
     citations: list[SourceCitation] = Field(default_factory=list)
     line_assertions: list[LineAssertion] = Field(default_factory=list)
+
+
+class QuestionApplication(BaseModel):
+    """Translate abstract chart facts into the concrete matter being asked."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    focus: str = Field(
+        min_length=1,
+        max_length=200,
+        description="用用户实际问题中的对象和目标表述本次要回答的具体事项",
+    )
+    favorable: list[Judgement] = Field(default_factory=list)
+    adverse: list[Judgement] = Field(default_factory=list)
+    synthesis: Judgement
+
+
+class CaseComparison(BaseModel):
+    """A traceable comparison between this chart and one original worked case."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    example_id: str = Field(min_length=1, description="必须来自本次提供的候选卦例")
+    similarities: Judgement
+    differences: Judgement
+    application: Judgement
+
+
+class CaseAnalysis(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    comparisons: list[CaseComparison] = Field(default_factory=list)
 
 
 class OverallConclusion(BaseModel):
@@ -191,6 +231,8 @@ class DivinationConclusion(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     overall: OverallConclusion
+    question_application: QuestionApplication
+    case_analysis: CaseAnalysis
     useful_god: UsefulGodAnalysis
     month_day: MonthDayAnalysis
     moving_lines: MovingLinesAnalysis
@@ -207,6 +249,15 @@ class DivinationConclusion(BaseModel):
         """
         for i, judgement in enumerate(self.overall.judgements):
             yield f"overall.judgements[{i}]", judgement
+        for i, judgement in enumerate(self.question_application.favorable):
+            yield f"question_application.favorable[{i}]", judgement
+        for i, judgement in enumerate(self.question_application.adverse):
+            yield f"question_application.adverse[{i}]", judgement
+        yield "question_application.synthesis", self.question_application.synthesis
+        for ci, comparison in enumerate(self.case_analysis.comparisons):
+            yield f"case_analysis.comparisons[{ci}].similarities", comparison.similarities
+            yield f"case_analysis.comparisons[{ci}].differences", comparison.differences
+            yield f"case_analysis.comparisons[{ci}].application", comparison.application
         for i, judgement in enumerate(self.useful_god.judgements):
             yield f"useful_god.judgements[{i}]", judgement
         for i, judgement in enumerate(self.month_day.judgements):

@@ -15,6 +15,7 @@ from __future__ import annotations
 from app.llm.base import LLMProvider, Message, parse_structured_json, validate_structured_payload
 from app.llm.context import (
     DivinationRequestContext,
+    ExampleContext,
     FactContext,
     SourceContext,
     TimingCandidateContext,
@@ -37,6 +38,8 @@ from app.llm.prompts import (
     build_user_message,
 )
 from app.llm.schemas import (
+    CaseAnalysis,
+    CaseComparison,
     DivinationConclusion,
     Judgement,
     LineAssertion,
@@ -44,6 +47,7 @@ from app.llm.schemas import (
     MonthDayAnalysis,
     MovingLinesAnalysis,
     OverallConclusion,
+    QuestionApplication,
     RiskItem,
     RisksAndUncertainties,
     SourceCitation,
@@ -59,6 +63,7 @@ __all__ = [
     "parse_structured_json",
     "validate_structured_payload",
     "DivinationRequestContext",
+    "ExampleContext",
     "FactContext",
     "SourceContext",
     "TimingCandidateContext",
@@ -76,12 +81,15 @@ __all__ = [
     "build_system_prompt",
     "build_user_message",
     "DivinationConclusion",
+    "CaseAnalysis",
+    "CaseComparison",
     "Judgement",
     "LineAssertion",
     "LineProperty",
     "MonthDayAnalysis",
     "MovingLinesAnalysis",
     "OverallConclusion",
+    "QuestionApplication",
     "RiskItem",
     "RisksAndUncertainties",
     "SourceCitation",

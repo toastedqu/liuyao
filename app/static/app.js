@@ -310,6 +310,23 @@ function renderInterpretation(payload) {
   result.append(lead);
   appendJudgements(result, interpretation.overall.judgements);
 
+  const applicationHeading = document.createElement("h4");
+  applicationHeading.textContent = "与所占之事的对应";
+  result.append(applicationHeading);
+  appendDefinitions(result, [
+    ["本次判断焦点", interpretation.question_application.focus],
+  ]);
+  [
+    ["有利因素", interpretation.question_application.favorable],
+    ["不利因素", interpretation.question_application.adverse],
+    ["具体综合判断", [interpretation.question_application.synthesis]],
+  ].forEach(([label, judgements]) => {
+    const heading = document.createElement("h5");
+    heading.textContent = label;
+    result.append(heading);
+    appendJudgements(result, judgements);
+  });
+
   [
     ["用神分析", interpretation.useful_god.judgements],
     ["月建日辰", interpretation.month_day.judgements],
@@ -334,8 +351,63 @@ function renderInterpretation(payload) {
   });
 }
 
+function appendCaseSource(container, label, source) {
+  if (!source) return;
+  const details = document.createElement("details");
+  const summary = document.createElement("summary");
+  summary.textContent = `${label} · ${source.source_id}`;
+  const quote = document.createElement("blockquote");
+  quote.textContent = source.text;
+  details.append(summary, quote);
+  container.append(details);
+}
+
+function renderCaseReasoning(payload) {
+  appendHeading(result, "8. 卦例类比");
+  const comparisons = new Map(
+    (payload.interpretation?.case_analysis?.comparisons || [])
+      .map((comparison) => [comparison.example_id, comparison])
+  );
+  if (!payload.case_evidence?.length) {
+    result.append(document.createTextNode("本次没有检索到可用的完整卦例。"));
+    return;
+  }
+
+  payload.case_evidence.forEach((evidence) => {
+    const article = document.createElement("article");
+    article.className = "case-evidence";
+    const heading = document.createElement("h4");
+    heading.textContent = `${evidence.example_id} · ${evidence.chapter_title}`;
+    article.append(heading);
+    appendDefinitions(article, [
+      ["预筛匹配分", evidence.match_score],
+      ["匹配原因", evidence.match_reasons],
+      ["模型是否采用", comparisons.has(evidence.example_id) ? "是" : "否，仅作候选"],
+    ]);
+
+    const comparison = comparisons.get(evidence.example_id);
+    if (comparison) {
+      [
+        ["相似点", comparison.similarities],
+        ["关键差异", comparison.differences],
+        ["如何迁移到本问", comparison.application],
+      ].forEach(([label, judgement]) => {
+        const subheading = document.createElement("h5");
+        subheading.textContent = label;
+        article.append(subheading);
+        appendJudgements(article, [judgement]);
+      });
+    }
+
+    appendCaseSource(article, "原占问", evidence.question);
+    appendCaseSource(article, "原卦盘", evidence.chart);
+    appendCaseSource(article, "原断语与应验", evidence.judgement);
+    result.append(article);
+  });
+}
+
 function renderTiming(payload) {
-  appendHeading(result, "8. 应期候选");
+  appendHeading(result, "9. 应期候选");
   appendTable(
     result,
     [
@@ -361,7 +433,7 @@ function renderTiming(payload) {
 }
 
 function renderSources(payload) {
-  appendHeading(result, "9. 原文依据");
+  appendHeading(result, "10. 原文依据");
   payload.sources.forEach((source) => {
     const details = document.createElement("details");
     const summary = document.createElement("summary");
@@ -386,7 +458,10 @@ function renderResponse(payload) {
   renderLines(payload);
   renderUsefulGod(payload);
   renderFacts(payload);
-  if (payload.interpretation) renderInterpretation(payload);
+  if (payload.interpretation) {
+    renderInterpretation(payload);
+    renderCaseReasoning(payload);
+  }
   renderTiming(payload);
   if (payload.sources) renderSources(payload);
   if (payload.limitations?.length) {

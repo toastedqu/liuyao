@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any
 
 from app.api.schemas import (
+    CaseEvidenceOutput,
     Category,
     ChartResponse,
     DivinationRequest,
@@ -23,10 +24,11 @@ from app.divination.validator import (
 )
 from app.knowledge.models import ParagraphRecord
 from app.knowledge.repository import KnowledgeRepository
-from app.knowledge.retrieval import Retriever
+from app.knowledge.retrieval import Retriever, ScoredExample
 from app.llm.base import LLMProvider
 from app.llm.context import (
     DivinationRequestContext,
+    ExampleContext,
     FactContext,
     SourceContext,
     TimingCandidateContext,
@@ -54,7 +56,11 @@ from app.rules.models import (
 )
 
 
-CORPUS_CATEGORY = {"诉讼": "词讼"}
+CORPUS_CATEGORY = {
+    "诉讼": "词讼",
+    "行人": "出行",
+    "学业": "功名",
+}
 USEFUL_GOD_SELECTION_SOURCE_IDS = (
     "008_用神章:p0001",
     "008_用神章:p0002",
@@ -124,6 +130,12 @@ class DeterministicResult:
     rules: RuleAnalysis
     category: Category | None = None
     useful_god_decision: UsefulGodDecision | None = None
+
+
+@dataclass(frozen=True)
+class RetrievedKnowledge:
+    sources: tuple[ParagraphRecord, ...]
+    examples: tuple[ScoredExample, ...]
 
 
 class DivinationService:
@@ -203,8 +215,8 @@ class DivinationService:
         if result.rules.useful_god.status == "unresolved":
             raise UsefulGodResolutionRequired(result.rules.useful_god.rationale)
 
-        sources = self._retrieve_sources(result)
-        llm_context = self._llm_context(result, sources)
+        knowledge = self._retrieve_knowledge(result)
+        llm_context = self._llm_context(result, knowledge)
         messages = build_messages(llm_context, DivinationConclusion)
         conclusion = await provider.generate_structured(messages, DivinationConclusion)
         first_validation = validate_divination_conclusion(conclusion, llm_context)
@@ -220,10 +232,15 @@ class DivinationService:
                 raise DivinationValidationError(first_validation, second_validation)
 
         base = self._chart_response(result)
+        source_outputs = self._source_outputs(knowledge.sources)
         return DivinationResponse(
             **base.model_dump(),
             interpretation=conclusion,
-            sources=tuple(self._source_output(paragraph) for paragraph in sources),
+            case_evidence=self._case_evidence_outputs(
+                knowledge.examples,
+                source_outputs,
+            ),
+            sources=source_outputs,
         )
 
     async def _select_useful_god(
@@ -304,7 +321,7 @@ class DivinationService:
                 )
             return tuple(paragraphs)
 
-    def _retrieve_sources(self, result: DeterministicResult) -> tuple[ParagraphRecord, ...]:
+    def _retrieve_knowledge(self, result: DeterministicResult) -> RetrievedKnowledge:
         self._require_knowledge_db()
         category = result.category
         assert category is not None
@@ -323,13 +340,18 @@ class DivinationService:
                 category=corpus_category,
                 fact_tags=rule_tags,
                 hexagram_name=result.chart.primary.name,
+                changed_hexagram_name=result.chart.changed.name,
                 keywords=category.value,
-                example_limit=4,
+                example_query=result.request.question,
+                useful_relative=(
+                    result.rules.useful_god.useful_relative.value
+                    if result.rules.useful_god.useful_relative is not None
+                    else None
+                ),
+                example_limit=6,
                 fts_limit=8,
             )
             mandatory_ids = {
-                fact.rule_source for fact in result.chart.facts
-            } | {
                 fact.rule_source for fact in result.rules.facts
             } | set(result.rules.useful_god.source_ids)
             for candidate in result.rules.timing_candidates:
@@ -367,16 +389,26 @@ class DivinationService:
                 raise KnowledgeBaseUnavailable(
                     "确定性规则引用无法作为模型依据（" + "；".join(details) + "）"
                 )
-            stage_limits = {"fixed_pick": 20, "category": 18, "fact_tag": 18, "fts": 8}
+            stage_limits = {"fixed_pick": 6, "category": 8, "fact_tag": 8, "fts": 3}
             stage_counts = {stage: 0 for stage in stage_limits}
             for item in retrieved.paragraphs:
+                if len(ordered) >= 36:
+                    break
                 if stage_counts.get(item.stage, 0) >= stage_limits.get(item.stage, 0):
                     continue
                 before = len(ordered)
                 add(item.paragraph)
                 if len(ordered) > before:
                     stage_counts[item.stage] += 1
+            examples: list[ScoredExample] = []
             for scored in retrieved.examples:
+                judgement = (
+                    repository.get_paragraph(scored.example.judgement_id)
+                    if scored.example.judgement_id
+                    else None
+                )
+                if judgement is None or judgement.is_editorial:
+                    continue
                 for source_id in (
                     scored.example.question_id,
                     scored.example.chart_id,
@@ -384,12 +416,18 @@ class DivinationService:
                 ):
                     if source_id:
                         add(repository.get_paragraph(source_id))
-            return tuple(ordered)
+                examples.append(scored)
+                if len(examples) == 1:
+                    break
+            return RetrievedKnowledge(
+                sources=tuple(ordered),
+                examples=tuple(examples),
+            )
 
     def _llm_context(
         self,
         result: DeterministicResult,
-        sources: tuple[ParagraphRecord, ...],
+        knowledge: RetrievedKnowledge,
     ) -> DivinationRequestContext:
         category = result.category
         assert category is not None
@@ -398,7 +436,7 @@ class DivinationService:
         ] + [
             self._rule_fact_context(fact) for fact in result.rules.facts
         ]
-        source_contexts = self._source_contexts(sources)
+        source_contexts = self._source_contexts(knowledge.sources)
         timing = [
             TimingCandidateContext(
                 candidate_id=candidate.id,
@@ -427,6 +465,10 @@ class DivinationService:
             facts=facts,
             timing_candidates=timing,
             sources=source_contexts,
+            examples=self._example_contexts(
+                knowledge.examples,
+                source_contexts,
+            ),
         )
 
     def _chart_response(self, result: DeterministicResult) -> ChartResponse:
@@ -530,6 +572,48 @@ class DivinationService:
                 )
         return contexts
 
+    def _example_contexts(
+        self,
+        examples: tuple[ScoredExample, ...],
+        sources: list[SourceContext],
+    ) -> list[ExampleContext]:
+        sources_by_id = {source.source_id: source for source in sources}
+        contexts = []
+        for scored in examples:
+            example = scored.example
+            judgement = sources_by_id.get(example.judgement_id or "")
+            if judgement is None:
+                continue
+            question = sources_by_id.get(example.question_id or "")
+            chart = sources_by_id.get(example.chart_id or "")
+            contexts.append(
+                ExampleContext(
+                    example_id=example.example_id,
+                    chapter=judgement.chapter,
+                    match_score=scored.score,
+                    match_reasons=[
+                        self._example_reason(reason) for reason in scored.reasons
+                    ],
+                    question=question,
+                    chart=chart,
+                    judgement=judgement,
+                )
+            )
+        return contexts
+
+    @staticmethod
+    def _example_reason(reason: str) -> str:
+        kind, _, value = reason.partition(":")
+        labels = {
+            "category": "同占类",
+            "rule_tags": "共同规则事实",
+            "hexagram": "同主卦",
+            "changed_hexagram": "同变卦",
+            "useful_relative": "同用神六亲",
+            "question_terms": "问题文字重合",
+        }
+        return f"{labels.get(kind, kind)}：{value}"
+
     @staticmethod
     def _chart_fact_context(fact: Any) -> FactContext:
         property_ = None
@@ -594,8 +678,45 @@ class DivinationService:
     def _fact_description(fact: Any) -> str:
         value = json.dumps(fact.value, ensure_ascii=False)
         evidence = json.dumps(fact.evidence, ensure_ascii=False, sort_keys=True)
-        line = f"第{fact.line}爻" if fact.line is not None else "全卦"
-        return f"{line}；事实类型={fact.type}；结果={value}；参数={evidence}"
+        return f"结果={value}；参数={evidence}"
+
+    def _source_outputs(
+        self,
+        sources: tuple[ParagraphRecord, ...],
+    ) -> tuple[SourceOutput, ...]:
+        with KnowledgeRepository.open(self._settings.KNOWLEDGE_DB_PATH) as repository:
+            return tuple(
+                self._source_output(paragraph, repository=repository)
+                for paragraph in sources
+            )
+
+    def _case_evidence_outputs(
+        self,
+        examples: tuple[ScoredExample, ...],
+        sources: tuple[SourceOutput, ...],
+    ) -> tuple[CaseEvidenceOutput, ...]:
+        sources_by_id = {source.source_id: source for source in sources}
+        outputs = []
+        for scored in examples:
+            example = scored.example
+            judgement = sources_by_id.get(example.judgement_id or "")
+            if judgement is None:
+                continue
+            outputs.append(
+                CaseEvidenceOutput(
+                    example_id=example.example_id,
+                    chapter_id=example.chapter_id,
+                    chapter_title=judgement.chapter_title,
+                    match_score=scored.score,
+                    match_reasons=tuple(
+                        self._example_reason(reason) for reason in scored.reasons
+                    ),
+                    question=sources_by_id.get(example.question_id or ""),
+                    chart=sources_by_id.get(example.chart_id or ""),
+                    judgement=judgement,
+                )
+            )
+        return tuple(outputs)
 
     def _source_output(
         self,

@@ -6,6 +6,7 @@ import pytest
 
 from app.llm.context import DivinationRequestContext, FactContext, SourceContext, TimingCandidateContext
 from app.llm.schemas import (
+    CaseAnalysis,
     DivinationConclusion,
     Judgement,
     LineAssertion,
@@ -13,6 +14,7 @@ from app.llm.schemas import (
     MonthDayAnalysis,
     MovingLinesAnalysis,
     OverallConclusion,
+    QuestionApplication,
     RisksAndUncertainties,
     SourceCitation,
     SpecialPatternsAnalysis,
@@ -88,6 +90,14 @@ def make_conclusion(
     )
     return DivinationConclusion(
         overall=OverallConclusion(outlook="吉", summary="求财可成", judgements=[judgement]),
+        question_application=QuestionApplication(
+            focus="本次所问求财能否办成",
+            synthesis=Judgement(
+                statement="结合本卦事实，本次求财有明确判断方向。",
+                fact_ids=["fact-0001"],
+            ),
+        ),
+        case_analysis=CaseAnalysis(comparisons=[]),
         useful_god=UsefulGodAnalysis(useful_god="妻财", judgements=[]),
         month_day=MonthDayAnalysis(judgements=[]),
         moving_lines=MovingLinesAnalysis(judgements=[]),

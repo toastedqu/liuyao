@@ -116,6 +116,19 @@ class SourceOutput(BaseModel):
     source_path: str
 
 
+class CaseEvidenceOutput(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    example_id: str
+    chapter_id: str
+    chapter_title: str
+    match_score: float
+    match_reasons: tuple[str, ...]
+    question: SourceOutput | None = None
+    chart: SourceOutput | None = None
+    judgement: SourceOutput
+
+
 class ChartResponse(BaseModel):
     input_summary: InputSummary
     calendar: CalendarContext
@@ -130,4 +143,5 @@ class ChartResponse(BaseModel):
 
 class DivinationResponse(ChartResponse):
     interpretation: DivinationConclusion
+    case_evidence: tuple[CaseEvidenceOutput, ...]
     sources: tuple[SourceOutput, ...]

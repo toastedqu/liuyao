@@ -14,6 +14,11 @@ that was sent to it, and checks:
    is backed by a fact_id whose recorded line/property/value actually agrees;
 6. no forbidden term (other schools, modern idioms, etc.) appears in any
    free-text field.
+7. the concrete question synthesis is backed by current-chart facts;
+8. every case comparison names a provided example and links that example's
+   exact text and outcome to current-chart facts;
+9. ``不确定`` is reserved for an explicit unresolved conflict between
+   favorable and adverse evidence, not used as a generic safe fallback.
 
 ``ValidationResult.issues`` carries everything a caller (``app.divination.service``,
 not part of this task) needs to build exactly one correction round via
@@ -124,9 +129,12 @@ def validate_divination_conclusion(
         )
         _check_forbidden_terms(f"{path}.statement", judgement.statement, terms, issues)
 
+    _check_question_application(conclusion, facts_by_id, issues)
+    _check_case_analysis(conclusion, context, facts_by_id, issues)
     _check_useful_god(conclusion, context, issues)
     unstructured_texts = [
         ("overall.summary", conclusion.overall.summary),
+        ("question_application.focus", conclusion.question_application.focus),
         ("useful_god.useful_god", conclusion.useful_god.useful_god),
     ]
     for pi, pattern in enumerate(conclusion.special_patterns.patterns):
@@ -190,6 +198,171 @@ def validate_useful_god_decision(
     _check_forbidden_terms("target", decision.target, terms, issues)
     _check_forbidden_terms("rationale", decision.rationale, terms, issues)
     return ValidationResult(valid=not issues, issues=issues)
+
+
+def _judgement_fact_ids(judgement: Judgement) -> set[str]:
+    return set(judgement.fact_ids) | {
+        assertion.fact_id
+        for assertion in judgement.line_assertions
+        if assertion.fact_id is not None
+    }
+
+
+def _check_question_application(
+    conclusion: DivinationConclusion,
+    facts_by_id: dict[str, FactContext],
+    issues: list[ValidationIssue],
+) -> None:
+    synthesis = conclusion.question_application.synthesis
+    if not (_judgement_fact_ids(synthesis) & facts_by_id.keys()):
+        issues.append(
+            ValidationIssue(
+                code="question_synthesis_missing_current_fact",
+                path="question_application.synthesis",
+                message=(
+                    "对用户具体问题的综合判断没有引用任何本卦事实；"
+                    "synthesis 必须把至少一个本次排盘 fact_id 落实到所占之事，"
+                    "不能只复述理论原文。"
+                ),
+            )
+        )
+
+    if conclusion.overall.outlook != "不确定":
+        return
+
+    favorable_ids = set().union(
+        *(
+            _judgement_fact_ids(judgement) & facts_by_id.keys()
+            for judgement in conclusion.question_application.favorable
+        ),
+        set(),
+    )
+    adverse_ids = set().union(
+        *(
+            _judgement_fact_ids(judgement) & facts_by_id.keys()
+            for judgement in conclusion.question_application.adverse
+        ),
+        set(),
+    )
+    synthesis_ids = _judgement_fact_ids(synthesis) & facts_by_id.keys()
+    has_two_sided_conflict = (
+        bool(favorable_ids - adverse_ids)
+        and bool(adverse_ids - favorable_ids)
+        and bool(synthesis_ids & favorable_ids)
+        and bool(synthesis_ids & adverse_ids)
+    )
+    if not has_two_sided_conflict:
+        issues.append(
+            ValidationIssue(
+                code="uncertain_without_explicit_conflict",
+                path="overall.outlook",
+                message=(
+                    "总体结论选择了“不确定”，但有利与不利部分没有分别引用不同的"
+                    "本卦事实，或 synthesis 没有同时综合两侧事实。"
+                    "没有完全相同的原文或卦例不能作为不确定的理由；若证据已有方向，"
+                    "请改判吉、凶或平，只有无法分出主次的直接冲突才可保留不确定。"
+                ),
+            )
+        )
+
+
+def _check_case_analysis(
+    conclusion: DivinationConclusion,
+    context: DivinationRequestContext,
+    facts_by_id: dict[str, FactContext],
+    issues: list[ValidationIssue],
+) -> None:
+    examples_by_id = {example.example_id: example for example in context.examples}
+    comparisons = conclusion.case_analysis.comparisons
+    if examples_by_id and not comparisons:
+        issues.append(
+            ValidationIssue(
+                code="case_comparison_required",
+                path="case_analysis.comparisons",
+                message=(
+                    "本轮提供了一个候选卦例，但输出没有进行实例比照；"
+                    "请说明该例与本卦的相似点、差异和对本问的可迁移结论。"
+                ),
+            )
+        )
+
+    seen: set[str] = set()
+    for index, comparison in enumerate(comparisons):
+        path = f"case_analysis.comparisons[{index}]"
+        if comparison.example_id in seen:
+            issues.append(
+                ValidationIssue(
+                    code="duplicate_case_comparison",
+                    path=f"{path}.example_id",
+                    message=f"卦例「{comparison.example_id}」被重复比较，请保留一次。",
+                )
+            )
+        seen.add(comparison.example_id)
+
+        example = examples_by_id.get(comparison.example_id)
+        if example is None:
+            issues.append(
+                ValidationIssue(
+                    code="unknown_example_id",
+                    path=f"{path}.example_id",
+                    message=(
+                        f"实例比照引用了未提供的卦例「{comparison.example_id}」；"
+                        "只能使用本轮候选卦例。"
+                    ),
+                    details={"example_id": comparison.example_id},
+                )
+            )
+            continue
+
+        example_source_ids = {
+            source.source_id
+            for source in (example.question, example.chart, example.judgement)
+            if source is not None
+        }
+        for field, judgement in (
+            ("similarities", comparison.similarities),
+            ("differences", comparison.differences),
+            ("application", comparison.application),
+        ):
+            cited_ids = {citation.source_id for citation in judgement.citations}
+            if not (cited_ids & example_source_ids):
+                issues.append(
+                    ValidationIssue(
+                        code="case_comparison_missing_case_citation",
+                        path=f"{path}.{field}.citations",
+                        message=(
+                            f"卦例「{comparison.example_id}」的{field}没有引用该实例的"
+                            "原占问、卦盘或原断语，不能证明正在比较这个实例。"
+                        ),
+                    )
+                )
+            if not (_judgement_fact_ids(judgement) & facts_by_id.keys()):
+                issues.append(
+                    ValidationIssue(
+                        code="case_comparison_missing_current_fact",
+                        path=f"{path}.{field}.fact_ids",
+                        message=(
+                            f"卦例「{comparison.example_id}」的{field}没有引用本卦 fact_id；"
+                            "实例只能在本卦事实支持下类比，不能直接套用原例结论。"
+                        ),
+                    )
+                )
+
+        application_citations = {
+            citation.source_id for citation in comparison.application.citations
+        }
+        if example.judgement.source_id not in application_citations:
+            issues.append(
+                ValidationIssue(
+                    code="case_application_missing_outcome",
+                    path=f"{path}.application.citations",
+                    message=(
+                        f"卦例「{comparison.example_id}」的迁移判断没有引用其原断语"
+                        f"「{example.judgement.source_id}」；必须先说明原例如何断，"
+                        "再结合本卦事实决定哪些结论可迁移。"
+                    ),
+                )
+            )
 
 
 def _check_useful_god(
