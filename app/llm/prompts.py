@@ -10,6 +10,8 @@ from __future__ import annotations
 
 import json
 
+from app.fact_display import fact_layer_label, line_name
+from app.fact_types import fact_type_label
 from app.llm.base import Message
 from app.llm.context import (
     DecisionEvidenceContext,
@@ -88,12 +90,15 @@ def build_system_prompt(*, forbidden_terms: frozenset[str] | None = None) -> str
 
 
 def _render_fact(fact) -> str:
-    parts = [f"- {fact.id} [{fact.type}]"]
-    parts.append(f"层级={fact.layer}")
-    if fact.rule_id is not None:
-        parts.append(f"规则={fact.rule_id}")
+    parts = [f"- {fact.id} [{fact_type_label(fact.type)}]"]
+    parts.append(f"层级={fact_layer_label(fact.layer)}")
     if fact.line is not None:
         parts.append(f"第{fact.line}爻")
+    if fact.related_lines:
+        parts.append(
+            "相关爻位="
+            + "、".join(line_name(position) for position in fact.related_lines)
+        )
     if fact.property is not None:
         # fact.value is always literally True whenever property is set
         # (see DivinationService._chart_fact_context/_rule_fact_context), so

@@ -3,7 +3,17 @@ from __future__ import annotations
 from enum import StrEnum
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field, JsonValue
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    JsonValue,
+    field_serializer,
+    field_validator,
+)
+
+from app.fact_display import fact_result_for_display
+from app.fact_types import fact_type_label
 
 
 class Element(StrEnum):
@@ -86,11 +96,25 @@ class ChartFact(BaseModel):
     model_config = ConfigDict(frozen=True)
 
     id: str
-    type: str
+    type: str = Field(description="内部稳定类型代码；对外 JSON 统一序列化为中文")
     line: int | None = None
     value: JsonValue
     evidence: dict[str, JsonValue] = Field(default_factory=dict)
     rule_source: str
+
+    @field_validator("type")
+    @classmethod
+    def validate_type_has_label(cls, fact_type: str) -> str:
+        fact_type_label(fact_type)
+        return fact_type
+
+    @field_serializer("type", when_used="json")
+    def serialize_type(self, fact_type: str) -> str:
+        return fact_type_label(fact_type)
+
+    @field_serializer("value", when_used="json")
+    def serialize_value(self, _value: JsonValue) -> JsonValue:
+        return fact_result_for_display(self)
 
 
 class Chart(BaseModel):
@@ -109,4 +133,3 @@ class Chart(BaseModel):
     changed: Hexagram
     lines: tuple[ChartLine, ChartLine, ChartLine, ChartLine, ChartLine, ChartLine]
     facts: tuple[ChartFact, ...]
-

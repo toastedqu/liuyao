@@ -18,6 +18,8 @@ from app.api.schemas import (
 from app.calendar.service import build_calendar_context
 from app.chart import Chart, build_chart
 from app.config import Settings
+from app.fact_display import fact_result_for_display
+from app.fact_types import fact_type_label
 from app.divination.validator import (
     ValidationResult,
     validate_divination_conclusion,
@@ -532,7 +534,15 @@ class DivinationService:
                 if useful_god_selected
                 else None
             ),
-            facts=result.chart.facts + rules.facts,
+            facts=tuple(
+                fact.model_copy(
+                    update={
+                        "type": fact_type_label(fact.type),
+                        "value": fact_result_for_display(fact),
+                    }
+                )
+                for fact in result.chart.facts + rules.facts
+            ),
             timing_candidates=(
                 rules.timing_candidates if useful_god_selected else ()
             ),
@@ -685,7 +695,7 @@ class DivinationService:
             property_ = LineProperty.JING
         return FactContext(
             id=fact.id,
-            type=fact.type,
+            type=fact_type_label(fact.type),
             description=DivinationService._fact_description(fact),
             line=fact.line,
             value=True if property_ is not None else None,
@@ -724,18 +734,17 @@ class DivinationService:
             value = True
         return FactContext(
             id=fact.id,
-            type=fact.type,
+            type=fact_type_label(fact.type),
             layer=fact.layer.value,
-            rule_id=fact.rule_id,
             description=DivinationService._fact_description(fact),
             line=fact.line,
+            related_lines=list(fact.related_lines),
             value=value,
             property=property_,
             rule_source=fact.rule_source,
             source_ids=list(fact.source_ids),
             data={
                 "value": fact.value,
-                "related_lines": list(fact.related_lines),
                 **fact.evidence,
             },
         )
@@ -783,14 +792,13 @@ class DivinationService:
 
     @staticmethod
     def _fact_description(fact: Any) -> str:
-        value = json.dumps(fact.value, ensure_ascii=False, separators=(",", ":"))
-        evidence = json.dumps(
-            fact.evidence,
-            ensure_ascii=False,
-            sort_keys=True,
-            separators=(",", ":"),
+        value = fact_result_for_display(fact)
+        rendered = (
+            value
+            if isinstance(value, str)
+            else json.dumps(value, ensure_ascii=False, separators=(",", ":"))
         )
-        return f"结果={value}；参数={evidence}"
+        return f"结果={rendered}"
 
     def _source_outputs(
         self,

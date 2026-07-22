@@ -5,11 +5,12 @@ serialization and the correction-round message builder.
 from __future__ import annotations
 
 import json
+import re
 
 import pytest
 
 from app.llm.base import Message
-from app.llm.context import ExampleContext, SourceContext
+from app.llm.context import ExampleContext, FactContext, SourceContext
 from app.llm.prompts import (
     FORBIDDEN_TERMS,
     QUESTION_CATEGORY_SYSTEM_PROMPT,
@@ -64,6 +65,37 @@ def test_build_user_message_includes_all_context_sections(sample_context) -> Non
     assert "008_用神章:p0001" in text
     assert "用神旺相" in text  # source text is inlined verbatim
     assert "模型判定问占视角：自占" in text
+    assert "[月破]" in text
+    assert "[动爻]" in text
+    assert "[MONTH_BREAK]" not in text
+    assert "[MOVING]" not in text
+    facts_block = text.split("排盘事实标签：\n", maxsplit=1)[1].split(
+        "\n\n本卦裁决证据",
+        maxsplit=1,
+    )[0]
+    facts_without_ids = re.sub(r"fact-\S+", "", facts_block)
+    assert re.search(r"[A-Za-z]", facts_without_ids) is None
+
+
+def test_build_user_message_names_both_lines_in_relation_facts(
+    sample_context,
+) -> None:
+    relation = FactContext(
+        id="fact-line-element-relation-l1-l2",
+        type="爻间五行生克",
+        layer="raw",
+        description="结果=二爻（土，动）生初爻（金，静）",
+        related_lines=[1, 2],
+    )
+    context = sample_context.model_copy(update={"facts": [relation]})
+
+    text = build_user_message(context, DivinationConclusion)
+
+    assert "[爻间五行生克]" in text
+    assert "层级=原始事实层" in text
+    assert "ZSBY" not in text
+    assert "相关爻位=初爻、二爻" in text
+    assert "二爻（土，动）生初爻（金，静）" in text
 
 
 def test_build_user_message_groups_worked_examples_separately(sample_context) -> None:

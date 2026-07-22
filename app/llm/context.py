@@ -13,7 +13,7 @@ from __future__ import annotations
 
 from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from app.llm.schemas import LineProperty
 
@@ -31,11 +31,17 @@ class FactContext(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
 
     id: str = Field(min_length=1, description="本次排盘中稳定唯一的事实ID，如 fact-0012")
-    type: str = Field(min_length=1, description="事实类型，如 MONTH_BREAK")
+    type: str = Field(
+        min_length=1,
+        description="面向 LLM 的中文事实类型",
+    )
     layer: Literal["chart", "raw", "derived", "effective"] = "chart"
-    rule_id: str | None = Field(default=None, description="产生该事实的稳定规则 ID")
     description: str = Field(min_length=1, description="供 LLM 阅读的事实中文描述")
     line: int | None = Field(default=None, ge=1, le=6, description="事实关联的爻位，1=初爻...6=上爻")
+    related_lines: list[int] = Field(
+        default_factory=list,
+        description="事实关联的其他爻位，1=初爻...6=上爻",
+    )
     value: bool | None = Field(default=None, description="事实的布尔结果，例如是否月破")
     property: LineProperty | None = Field(
         default=None,
@@ -44,6 +50,13 @@ class FactContext(BaseModel):
     rule_source: str | None = Field(default=None, description="产生该事实所依据的规则出处 source_id")
     source_ids: list[str] = Field(default_factory=list, description="该规则事实全部直接原文出处")
     data: dict[str, Any] = Field(default_factory=dict, description="其余计算参数，仅供展示")
+
+    @field_validator("description")
+    @classmethod
+    def description_must_not_expose_machine_codes(cls, description: str) -> str:
+        if any("A" <= character <= "Z" or "a" <= character <= "z" for character in description):
+            raise ValueError("LLM 事实描述不得包含英文机器码")
+        return description
 
 
 class SourceContext(BaseModel):

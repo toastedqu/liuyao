@@ -149,6 +149,14 @@ function display(value) {
   return String(value);
 }
 
+function sourceLabel(sourceId) {
+  const match = /^(\d+)_([^:]+):p(\d+)$/.exec(sourceId);
+  if (!match) {
+    throw new Error(`无法显示规则出处：${sourceId}`);
+  }
+  return `${match[1]} ${match[2]}第${match[3]}段`;
+}
+
 function appendHeading(container, text) {
   const heading = document.createElement("h3");
   heading.textContent = text;
@@ -330,11 +338,25 @@ function renderFacts(payload) {
   appendTable(
     result,
     [
-      ["事实 ID", (fact) => fact.id],
+      ["事实编号", (fact) => fact.id],
       ["类型", (fact) => fact.type],
-      ["爻位", (fact) => (fact.line ? `第${fact.line}爻` : "全卦")],
+      [
+        "爻位",
+        (fact) => {
+          const positions = fact.line ? [fact.line] : [];
+          if (fact.related_lines?.length) {
+            positions.push(...fact.related_lines);
+          }
+          if (positions.length) {
+            return [...new Set(positions)]
+              .map((position) => lineNames[position - 1])
+              .join("、");
+          }
+          return "全卦";
+        },
+      ],
       ["结果", (fact) => typeof fact.value === "object" ? JSON.stringify(fact.value) : fact.value],
-      ["规则出处", (fact) => fact.rule_source],
+      ["规则出处", (fact) => sourceLabel(fact.rule_source)],
     ],
     payload.facts
   );

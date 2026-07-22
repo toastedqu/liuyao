@@ -213,3 +213,7 @@ def test_chart_facts_have_stable_ids_and_sources() -> None:
     assert "fact-line-state-l3" in ids
     assert "fact-line-state-l4" in ids
     assert all(fact.rule_source for fact in chart.facts)
+    moving = next(fact for fact in chart.facts if fact.type == "MOVING")
+    serialized = moving.model_dump(mode="json")
+    assert serialized["type"] == "动爻"
+    assert serialized["value"] == "是"

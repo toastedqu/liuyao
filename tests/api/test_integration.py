@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 from collections.abc import Iterator
+import json
 from pathlib import Path
+import re
 from typing import Any
 
 import pytest
@@ -11,6 +13,7 @@ from app.api.dependencies import get_divination_service
 from app.api.schemas import DivinationRequest
 from app.config import Settings
 from app.divination.service import DivinationService, DivinationValidationError
+from app.fact_types import FACT_TYPE_LABELS
 from app.knowledge.ingest import build_database
 from app.llm.base import Message
 from app.llm.schemas import (
@@ -72,6 +75,16 @@ def request_payload(
         },
         "lines": lines or [6, 7, 8, 7, 7, 7],
     }
+
+
+def assert_fact_values_are_localized(facts: list[dict[str, Any]]) -> None:
+    for fact in facts:
+        rendered = re.sub(
+            r"fact-\S+",
+            "",
+            json.dumps(fact["value"], ensure_ascii=False),
+        )
+        assert re.search(r"[A-Za-z]", rendered) is None
 
 
 def question_category(
@@ -229,6 +242,19 @@ def test_chart_api_is_fully_deterministic_without_llm_configuration() -> None:
     assert payload["useful_god"] is None
     assert payload["timing_candidates"] == []
     assert payload["facts"]
+    fact_types = {fact["type"] for fact in payload["facts"]}
+    assert {"主卦", "动爻", "静爻", "本爻四时旺衰"} <= fact_types
+    assert fact_types <= set(FACT_TYPE_LABELS.values())
+    relation = next(
+        fact
+        for fact in payload["facts"]
+        if fact["type"] == "爻间五行生克"
+        and fact["related_lines"] == [1, 2]
+    )
+    assert "初爻" in relation["value"]
+    assert "二爻" in relation["value"]
+    assert "实际发生作用" not in relation["value"]
+    assert_fact_values_are_localized(payload["facts"])
 
 
 @pytest.mark.asyncio
@@ -350,8 +376,16 @@ def test_divination_api_returns_structured_result(
     assert payload["input_summary"]["category"] == "求财"
     assert payload["useful_god"]["selection_mode"] == "relative"
     assert payload["useful_god"]["useful_relative"] == "妻财"
+    assert_fact_values_are_localized(payload["facts"])
     assert len(provider.calls) == 2
-    assert len(provider.calls[1][1].content) < 20_000
+    llm_message = provider.calls[1][1].content
+    assert len(llm_message) < 20_000
+    facts_block = llm_message.split("排盘事实标签：\n", maxsplit=1)[1].split(
+        "\n\n本卦裁决证据",
+        maxsplit=1,
+    )[0]
+    facts_without_ids = re.sub(r"fact-\S+", "", facts_block)
+    assert re.search(r"[A-Za-z]", facts_without_ids) is None
 
 
 def test_question_with_multiple_topics_is_classified_by_model(
