@@ -32,7 +32,7 @@ def test_build_reports_complete_stats(knowledge_db_path, build_workdir):
     assert stats.expected_chapters == EXPECTED_CHAPTER_COUNT
     assert stats.complete is True
     assert stats.paragraphs_indexed > 2000
-    assert stats.examples_indexed == 321
+    assert stats.examples_indexed == 306
     assert stats.editorial_paragraphs > 0
     assert isinstance(stats.warnings, list)
     second_path.unlink(missing_ok=True)

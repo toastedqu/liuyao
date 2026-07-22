@@ -17,6 +17,7 @@ from app.llm.schemas import (
     MonthDayAnalysis,
     MovingLinesAnalysis,
     OverallConclusion,
+    QuestionCategory,
     QuestionApplication,
     RiskItem,
     RisksAndUncertainties,
@@ -24,7 +25,6 @@ from app.llm.schemas import (
     SpecialPattern,
     SpecialPatternsAnalysis,
     TimingSelection,
-    UsefulGodDecision,
     UsefulGodAnalysis,
 )
 
@@ -46,6 +46,7 @@ def test_iter_judgements_visits_every_section_in_order() -> None:
             comparisons=[
                 CaseComparison(
                     example_id="example-1",
+                    role="reference_only",
                     similarities=_judgement("case-similarities"),
                     differences=_judgement("case-differences"),
                     application=_judgement("case-application"),
@@ -103,9 +104,10 @@ def test_judgement_rejects_unknown_fields() -> None:
         Judgement(statement="x", unexpected_field=True)  # type: ignore[call-arg]
 
 
-def test_overall_conclusion_outlook_is_restricted_enum() -> None:
+@pytest.mark.parametrize("outlook", ["平", "不确定", "大凶大吉"])
+def test_overall_conclusion_outlook_is_restricted_enum(outlook: str) -> None:
     with pytest.raises(ValidationError):
-        OverallConclusion(outlook="大凶大吉", summary="s")
+        OverallConclusion(outlook=outlook, summary="s")
 
 
 def test_line_assertion_line_must_be_in_range() -> None:
@@ -131,24 +133,16 @@ def test_timing_selection_defaults_to_no_candidates_and_sufficient_evidence() ->
     assert selection.insufficient_evidence is False
 
 
-def test_useful_god_decision_enforces_mode_and_relative() -> None:
-    citation = SourceCitation(source_id="008_用神章:p0006", quote="以财爻为用神")
-    decision = UsefulGodDecision(
-        category="求财",
-        target="求财",
-        mode="relative",
-        useful_relative="妻财",
-        rationale="问题所问为财物。",
-        citations=[citation],
-    )
-    assert decision.useful_relative == "妻财"
+def test_question_category_requires_one_known_category() -> None:
+    semantics = QuestionCategory(category="婚姻", perspective="自占")
+    assert semantics.category == "婚姻"
+    assert semantics.perspective == "自占"
 
-    with pytest.raises(ValidationError, match="mode=world"):
-        UsefulGodDecision(
-            category="身命",
-            target="本人近况",
-            mode="world",
-            useful_relative="妻财",
-            rationale="问本人。",
-            citations=[citation],
-        )
+    with pytest.raises(ValidationError):
+        QuestionCategory(category="恋爱", perspective="自占")
+
+    with pytest.raises(ValidationError):
+        QuestionCategory(category="婚姻", perspective="其他")
+
+    with pytest.raises(ValidationError):
+        QuestionCategory(category="婚姻", perspective="自占", ambiguous=True)

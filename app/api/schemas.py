@@ -18,7 +18,12 @@ from app.calendar.models import CalendarContext
 from app.chart.models import ChartFact, ChartLine, Hexagram
 from app.knowledge.models import ContentType
 from app.llm.schemas import DivinationConclusion
-from app.rules.models import RuleFact, TimingCandidate, UsefulGodSelection
+from app.rules.models import (
+    OutcomeAnalysis,
+    RuleFact,
+    TimingCandidate,
+    UsefulGodSelection,
+)
 
 
 class Category(StrEnum):
@@ -37,6 +42,16 @@ class Category(StrEnum):
     FAMILY = "六亲"
     STUDY = "学业"
     OTHER = "其他"
+
+
+class UsefulGodInput(StrEnum):
+    WORLD = "世爻"
+    RESPONSE = "应爻"
+    PARENT = "父母"
+    SIBLING = "兄弟"
+    OFFICIAL = "官鬼"
+    WEALTH = "妻财"
+    CHILD = "子孙"
 
 
 class CalendarInput(BaseModel):
@@ -78,7 +93,7 @@ Question = Annotated[
 ]
 
 
-class DivinationRequest(BaseModel):
+class ChartRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     question: Question
@@ -94,11 +109,16 @@ class DivinationRequest(BaseModel):
         return value
 
 
+class DivinationRequest(ChartRequest):
+    useful_god: UsefulGodInput
+
+
 class InputSummary(BaseModel):
     model_config = ConfigDict(frozen=True)
 
     question: str
     category: str | None
+    perspective: Literal["自占", "代占"] | None = None
     calendar: str
     timezone: Literal["Asia/Shanghai"] = "Asia/Shanghai"
     line_order: Literal["初爻至上爻"] = "初爻至上爻"
@@ -136,6 +156,7 @@ class ChartResponse(BaseModel):
     changed_hexagram: Hexagram
     lines: tuple[ChartLine, ...]
     useful_god: UsefulGodSelection | None = None
+    outcome_analysis: OutcomeAnalysis | None = None
     facts: tuple[ChartFact | RuleFact, ...]
     timing_candidates: tuple[TimingCandidate, ...] = ()
     limitations: tuple[str, ...] = ()

@@ -9,6 +9,7 @@ from app.api.schemas import DivinationRequest
 def valid_payload() -> dict:
     return {
         "question": " 本次求财是否可成？ ",
+        "useful_god": "妻财",
         "calendar": {
             "year": 2026,
             "month": 7,
@@ -24,6 +25,7 @@ def test_request_normalizes_question_and_preserves_bottom_to_top_lines() -> None
     request = DivinationRequest.model_validate(valid_payload())
 
     assert request.question == "本次求财是否可成？"
+    assert request.useful_god == "妻财"
     assert request.lines == [7, 8, 6, 9, 7, 8]
     assert request.calendar.as_datetime().utcoffset().total_seconds() == 8 * 3600
 
@@ -59,6 +61,18 @@ def test_removed_category_and_subject_fields_are_rejected() -> None:
     payload = valid_payload()
     payload["subject"] = {"mode": "self", "relation": None}
     with pytest.raises(ValidationError, match="Extra inputs are not permitted"):
+        DivinationRequest.model_validate(payload)
+
+
+def test_request_requires_a_valid_user_selected_useful_god() -> None:
+    payload = valid_payload()
+    del payload["useful_god"]
+    with pytest.raises(ValidationError, match="Field required"):
+        DivinationRequest.model_validate(payload)
+
+    payload = valid_payload()
+    payload["useful_god"] = "恋爱"
+    with pytest.raises(ValidationError):
         DivinationRequest.model_validate(payload)
 
 

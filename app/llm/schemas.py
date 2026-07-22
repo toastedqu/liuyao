@@ -53,8 +53,8 @@ class SourceCitation(BaseModel):
         return stripped
 
 
-class UsefulGodDecision(BaseModel):
-    """The model's source-backed classification of the question's useful god."""
+class QuestionCategory(BaseModel):
+    """Classify the matter and whether it concerns the asker or another person."""
 
     model_config = ConfigDict(extra="forbid")
 
@@ -75,32 +75,11 @@ class UsefulGodDecision(BaseModel):
         "学业",
         "其他",
     ]
-    target: str = Field(
-        min_length=1,
-        max_length=100,
-        description="从所占之事中识别出的具体占问对象",
+    perspective: Literal["自占", "代占"] = Field(
+        description=(
+            "自占=问占者自己的事项；代占=替父母、子女、伴侣、亲友等他人问占"
+        )
     )
-    mode: Literal["world", "relative"] = Field(
-        description="问占者本人整体事项取 world；明确人物或事物六亲取 relative"
-    )
-    useful_relative: Literal["父母", "兄弟", "官鬼", "妻财", "子孙"] | None = None
-    rationale: str = Field(
-        min_length=1,
-        max_length=500,
-        description="仅说明如何从用户原话识别对象并据原文确定用神",
-    )
-    citations: list[SourceCitation] = Field(
-        min_length=1,
-        description="至少一条支持所选用神的逐字原文",
-    )
-
-    @model_validator(mode="after")
-    def validate_mode_and_relative(self) -> "UsefulGodDecision":
-        if self.mode == "world" and self.useful_relative is not None:
-            raise ValueError("mode=world 时 useful_relative 必须为 null")
-        if self.mode == "relative" and self.useful_relative is None:
-            raise ValueError("mode=relative 时必须给出 useful_relative")
-        return self
 
 
 class LineAssertion(BaseModel):
@@ -146,6 +125,9 @@ class CaseComparison(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     example_id: str = Field(min_length=1, description="必须来自本次提供的候选卦例")
+    role: Literal["reference_only"] = Field(
+        description="固定为 reference_only；卦例不能参与本卦吉凶权重"
+    )
     similarities: Judgement
     differences: Judgement
     application: Judgement
@@ -160,7 +142,7 @@ class CaseAnalysis(BaseModel):
 class OverallConclusion(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    outlook: Literal["吉", "凶", "平", "不确定"]
+    outlook: Literal["吉", "凶", "吉中有阻", "凶中有救", "需再占"]
     summary: str = Field(min_length=1)
     judgements: list[Judgement] = Field(default_factory=list)
 

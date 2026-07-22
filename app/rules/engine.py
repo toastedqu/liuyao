@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+from app.rules.auxiliary import auxiliary_facts
 from app.rules.god_roles import god_role_facts
+from app.rules.effects import effective_facts
 from app.rules.interactions import interaction_facts
 from app.rules.models import (
     RuleAnalysis,
@@ -8,7 +10,9 @@ from app.rules.models import (
     UsefulGodChoice,
     UsefulGodSelection,
 )
+from app.rules.outcome import build_outcome_analysis
 from app.rules.patterns import pattern_facts
+from app.rules.registry import unimplemented_rule_descriptions
 from app.rules.strength import strength_facts
 from app.rules.timing import timing_candidates
 from app.rules.useful_god import select_useful_god
@@ -25,14 +29,15 @@ class RuleEngine:
         facts = (
             strength_facts(context)
             + interaction_facts(context)
-            + pattern_facts(context)
+            + auxiliary_facts(context)
         )
+        facts.extend(pattern_facts(context, tuple(facts)))
         if useful_god_choice is None:
             useful = UsefulGodSelection(
                 status="unresolved",
                 target=context.question,
                 useful_relative=None,
-                rationale=("完整断卦时由模型根据所占之事判定用神",),
+                rationale=("完整断卦时由用户明确选择用神，再由代码定位",),
             )
         else:
             useful = select_useful_god(
@@ -41,8 +46,10 @@ class RuleEngine:
                 useful_god_choice,
             )
             facts.extend(god_role_facts(context, useful))
+        facts.extend(effective_facts(context, useful, tuple(facts)))
         facts.sort(key=lambda fact: fact.id)
         fact_tuple = tuple(facts)
+        outcome = build_outcome_analysis(context, useful, fact_tuple)
         timing = (
             tuple(timing_candidates(context, useful, fact_tuple))
             if useful_god_choice is not None
@@ -52,12 +59,11 @@ class RuleEngine:
         return RuleAnalysis(
             useful_god=useful,
             facts=fact_tuple,
+            outcome_analysis=outcome,
             timing_candidates=timing,
             implemented_rule_types=implemented,
-            unimplemented_rules=(
-                "六害（原书明确“全无应验”，不作为吉凶规则）",
-                "随鬼入墓的语义适用条件",
-                "复杂飞伏神有用/无用权衡",
+            unimplemented_rules=unimplemented_rule_descriptions()
+            + (
                 "多卦合参",
                 "门类专属应期的绝对日期换算",
             ),

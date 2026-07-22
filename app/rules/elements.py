@@ -134,6 +134,59 @@ ADVANCE_PAIRS = {
 }
 RETREAT_PAIRS = {(target, source) for source, target in ADVANCE_PAIRS}
 
+TAIYI_NOBLE: dict[str, frozenset[str]] = {
+    "甲": frozenset(("丑", "未")),
+    "戊": frozenset(("丑", "未")),
+    "庚": frozenset(("丑", "未")),
+    "乙": frozenset(("子", "申")),
+    "己": frozenset(("子", "申")),
+    "丙": frozenset(("亥", "酉")),
+    "丁": frozenset(("亥", "酉")),
+    "壬": frozenset(("卯", "巳")),
+    "癸": frozenset(("卯", "巳")),
+    "辛": frozenset(("午", "寅")),
+}
+LU_SHEN: dict[str, str] = {
+    "甲": "寅",
+    "乙": "卯",
+    "丙": "巳",
+    "戊": "巳",
+    "丁": "午",
+    "己": "午",
+    "庚": "申",
+    "辛": "酉",
+    "壬": "亥",
+    "癸": "子",
+}
+YI_MA: dict[str, str] = {
+    "申": "寅",
+    "子": "寅",
+    "辰": "寅",
+    "巳": "亥",
+    "酉": "亥",
+    "丑": "亥",
+    "寅": "申",
+    "午": "申",
+    "戌": "申",
+    "亥": "巳",
+    "卯": "巳",
+    "未": "巳",
+}
+TIAN_XI: dict[str, str] = {
+    "寅": "戌",
+    "卯": "戌",
+    "辰": "戌",
+    "巳": "丑",
+    "午": "丑",
+    "未": "丑",
+    "申": "辰",
+    "酉": "辰",
+    "戌": "辰",
+    "亥": "未",
+    "子": "未",
+    "丑": "未",
+}
+
 
 def generates(source: Element, target: Element) -> bool:
     return GENERATES[source] is target
@@ -184,4 +237,3 @@ def is_punishment(first: str, second: str) -> bool:
 def validate_branch(branch: str) -> None:
     if branch not in BRANCH_ELEMENT:
         raise ValueError(f"未知地支：{branch}")
-

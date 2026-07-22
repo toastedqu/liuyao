@@ -9,7 +9,14 @@ import re
 import pytest
 
 from app.knowledge.models import ContentType, Layer
-from app.knowledge.parser import parse_chapter, split_blocks
+from app.knowledge.parser import (
+    FENCE_MARKER_RE,
+    _fence_inner_span,
+    _is_didactic_chart_intro,
+    _looks_like_example_chart,
+    parse_chapter,
+    split_blocks,
+)
 
 EXPECTED_CHAPTER_COUNT = 141
 STABLE_ID_RE = re.compile(r"^\d{3}_[^:]+:p\d{4}$")
@@ -180,14 +187,117 @@ def test_examples_link_existing_paragraph_ids(parsed_corpus):
                 assert example.judgement_id in by_id
 
 
-def test_example_count_matches_fenced_code_blocks(source_dir, parsed_corpus):
+def test_example_count_matches_actual_hexagram_charts(source_dir, parsed_corpus):
     total_examples = sum(len(r.examples) for r in parsed_corpus)
-    total_fences = 0
+    total_worked_charts = 0
     for path in source_dir.glob("*.md"):
         text = path.read_text(encoding="utf-8")
-        total_fences += len(re.findall(r"^```", text, re.M))
-    assert total_fences % 2 == 0
-    assert total_examples == total_fences // 2
+        blocks = split_blocks(text)
+        for index, block in enumerate(blocks):
+            if FENCE_MARKER_RE.match(block.text.strip()):
+                inner = _fence_inner_span(block)[2]
+                if _looks_like_example_chart(inner):
+                    previous = blocks[index - 1].text if index else ""
+                    total_worked_charts += int(
+                        not _is_didactic_chart_intro(previous)
+                    )
+    assert total_examples == total_worked_charts == 306
+
+
+def test_flying_spirit_illustrations_remain_theory(source_dir, repo_root):
+    chapter = parse_chapter(
+        source_dir / "035_飞伏神章.md",
+        repo_root=repo_root,
+    )
+
+    assert chapter.examples[0].question_id == (
+        "035_飞伏神章:example0001:question"
+    )
+    by_id = {paragraph.source_id: paragraph for paragraph in chapter.paragraphs}
+    assert "卯月 壬辰日" in by_id[chapter.examples[0].question_id].text
+    assert by_id["035_飞伏神章:p0002"].content_type == ContentType.RULE
+    assert by_id["035_飞伏神章:p0006"].content_type == ContentType.RULE
+
+
+def test_worked_case_judgement_spans_all_blocks_until_next_case(
+    source_dir,
+    repo_root,
+):
+    chapter = parse_chapter(
+        source_dir / "034_月破章.md",
+        repo_root=repo_root,
+    )
+    by_id = {paragraph.source_id: paragraph for paragraph in chapter.paragraphs}
+    judgement = by_id["034_月破章:example0003:judgement"]
+
+    assert "\n\n" in judgement.text
+    raw = (repo_root / chapter.chapter.source_path).read_text(encoding="utf-8")
+    assert raw[judgement.char_start : judgement.char_end] == judgement.text
+
+
+def test_case_narrative_is_not_reindexed_as_general_theory(
+    source_dir,
+    repo_root,
+):
+    chapter = parse_chapter(
+        source_dir / "034_月破章.md",
+        repo_root=repo_root,
+    )
+    by_id = {paragraph.source_id: paragraph for paragraph in chapter.paragraphs}
+
+    assert "余劝辞荣" in by_id[
+        "034_月破章:example0005:judgement"
+    ].text
+    assert not any(
+        paragraph.example_id is None and "余劝辞荣" in paragraph.text
+        for paragraph in chapter.paragraphs
+    )
+
+
+@pytest.mark.parametrize(
+    ("chapter_name", "example_id"),
+    [
+        ("065_援例章.md", "065_援例章:example0002"),
+        ("077_谒贵求财章.md", "077_谒贵求财章:example0002"),
+        ("091_婚姻章.md", "091_婚姻章:example0006"),
+    ],
+)
+def test_bold_first_judgement_stays_with_worked_case(
+    source_dir,
+    repo_root,
+    chapter_name,
+    example_id,
+):
+    chapter = parse_chapter(
+        source_dir / chapter_name,
+        repo_root=repo_root,
+    )
+    example = next(
+        item for item in chapter.examples if item.example_id == example_id
+    )
+    by_id = {paragraph.source_id: paragraph for paragraph in chapter.paragraphs}
+
+    assert example.judgement_id is not None
+    assert by_id[example.judgement_id].text.startswith("**")
+
+
+def test_fenced_origin_and_taboo_lists_remain_theory(source_dir, repo_root):
+    chapter = parse_chapter(
+        source_dir / "010_元神、忌神、衰旺章.md",
+        repo_root=repo_root,
+    )
+
+    assert chapter.examples == []
+    fenced_rules = [
+        paragraph
+        for paragraph in chapter.paragraphs
+        if "以上元神见生不生" in paragraph.text
+        or "以上乃有力之忌神" in paragraph.text
+        or "以上乃无力之忌神" in paragraph.text
+    ]
+    assert len(fenced_rules) == 3
+    assert all(paragraph.content_type == ContentType.RULE for paragraph in fenced_rules)
+    assert all(paragraph.layer == Layer.FOUNDATIONAL for paragraph in fenced_rules)
 
 
 class TestSplitBlocks:

@@ -11,7 +11,7 @@ property=..., description=...)``) to hand data to :mod:`app.llm.prompts` and
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -32,6 +32,8 @@ class FactContext(BaseModel):
 
     id: str = Field(min_length=1, description="本次排盘中稳定唯一的事实ID，如 fact-0012")
     type: str = Field(min_length=1, description="事实类型，如 MONTH_BREAK")
+    layer: Literal["chart", "raw", "derived", "effective"] = "chart"
+    rule_id: str | None = Field(default=None, description="产生该事实的稳定规则 ID")
     description: str = Field(min_length=1, description="供 LLM 阅读的事实中文描述")
     line: int | None = Field(default=None, ge=1, le=6, description="事实关联的爻位，1=初爻...6=上爻")
     value: bool | None = Field(default=None, description="事实的布尔结果，例如是否月破")
@@ -40,6 +42,7 @@ class FactContext(BaseModel):
         description="事实对应的规范化爻位属性标签，用于校验判断中的空/破/动/旺/衰/生克声明",
     )
     rule_source: str | None = Field(default=None, description="产生该事实所依据的规则出处 source_id")
+    source_ids: list[str] = Field(default_factory=list, description="该规则事实全部直接原文出处")
     data: dict[str, Any] = Field(default_factory=dict, description="其余计算参数，仅供展示")
 
 
@@ -67,6 +70,19 @@ class ExampleContext(BaseModel):
     judgement: SourceContext
 
 
+class DecisionEvidenceContext(BaseModel):
+    """One pre-classified fact group allowed to influence the outlook."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    evidence_id: str = Field(min_length=1)
+    direction: Literal["有利", "不利", "条件性", "仅背景"]
+    weight: Literal["主证", "辅证"]
+    description: str = Field(min_length=1)
+    fact_ids: list[str] = Field(min_length=1)
+    source_ids: list[str] = Field(default_factory=list)
+
+
 class TimingCandidateContext(BaseModel):
     """One code-generated 应期 candidate the LLM may choose from."""
 
@@ -90,9 +106,18 @@ class DivinationRequestContext(BaseModel):
 
     question: str = Field(min_length=1)
     category: str = Field(min_length=1)
+    perspective: Literal["自占", "代占"]
     chart_summary: dict[str, Any] = Field(description="结构化排盘（由排盘引擎产生），原样转述给模型")
     useful_god: str = Field(min_length=1)
     facts: list[FactContext] = Field(default_factory=list)
+    decision_guardrail: Literal[
+        "仅有利主证",
+        "仅不利主证",
+        "正反证据并见",
+        "暂不裁决",
+    ] = "暂不裁决"
+    decision_evidence: list[DecisionEvidenceContext] = Field(default_factory=list)
+    decision_limitations: list[str] = Field(default_factory=list)
     timing_candidates: list[TimingCandidateContext] = Field(default_factory=list)
     sources: list[SourceContext] = Field(default_factory=list)
     examples: list[ExampleContext] = Field(default_factory=list)

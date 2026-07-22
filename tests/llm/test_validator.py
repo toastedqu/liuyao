@@ -8,10 +8,7 @@ LLM response) and checks the returned ``ValidationResult``.
 
 from __future__ import annotations
 
-from app.divination.validator import (
-    validate_divination_conclusion,
-    validate_useful_god_decision,
-)
+from app.divination.validator import validate_divination_conclusion
 from app.llm.context import ExampleContext, SourceContext
 from app.llm.schemas import (
     CaseAnalysis,
@@ -21,7 +18,6 @@ from app.llm.schemas import (
     LineProperty,
     RiskItem,
     SourceCitation,
-    UsefulGodDecision,
 )
 from tests.llm.conftest import make_conclusion
 
@@ -59,6 +55,7 @@ def _valid_case_analysis() -> CaseAnalysis:
         comparisons=[
             CaseComparison(
                 example_id="076_求财章:example0001",
+                role="reference_only",
                 similarities=Judgement(
                     statement="本问与原例同属求财。",
                     fact_ids=["fact-0001"],
@@ -117,13 +114,13 @@ def test_question_synthesis_must_use_current_chart_fact(sample_context) -> None:
     }
 
 
-def test_uncertain_outlook_requires_explicit_two_sided_conflict(sample_context) -> None:
+def test_outlook_must_follow_guardrail_allowlist(sample_context) -> None:
     conclusion = make_conclusion()
-    conclusion.overall.outlook = "不确定"
+    conclusion.overall.outlook = "需再占"
 
     result = validate_divination_conclusion(conclusion, sample_context)
 
-    assert "uncertain_without_explicit_conflict" in {
+    assert "outlook_not_allowed_by_guardrail" in {
         issue.code for issue in result.issues
     }
 
@@ -144,20 +141,107 @@ def test_traceable_case_comparison_passes(sample_context) -> None:
     assert validate_divination_conclusion(conclusion, context).valid is True
 
 
-def test_case_application_must_cite_original_outcome(sample_context) -> None:
+def test_case_citation_cannot_support_main_outlook(sample_context) -> None:
     context = _context_with_case(sample_context)
     conclusion = make_conclusion()
     conclusion.case_analysis = _valid_case_analysis()
-    conclusion.case_analysis.comparisons[0].application.citations = [
+    conclusion.overall.judgements[0].citations = [
         SourceCitation(
-            source_id="076_求财章:example0001:question",
-            quote="占求财",
+            source_id="076_求财章:example0001:judgement",
+            quote="财爻不现",
         )
     ]
 
     result = validate_divination_conclusion(conclusion, context)
 
-    assert "case_application_missing_outcome" in {
+    assert "case_citation_outside_reference" in {
+        issue.code for issue in result.issues
+    }
+
+
+def test_favorable_only_guardrail_rejects_adverse_outlook(
+    sample_context,
+) -> None:
+    conclusion = make_conclusion()
+    conclusion.overall.outlook = "凶"
+
+    result = validate_divination_conclusion(conclusion, sample_context)
+
+    assert "outlook_not_allowed_by_guardrail" in {
+        issue.code for issue in result.issues
+    }
+
+
+def test_mixed_directional_outlook_must_balance_both_sides(
+    sample_context,
+) -> None:
+    context = sample_context.model_copy(
+        update={
+            "decision_guardrail": "正反证据并见",
+            "decision_evidence": [
+                *sample_context.decision_evidence,
+                sample_context.decision_evidence[0].model_copy(
+                    update={
+                        "evidence_id": "test-adverse",
+                        "direction": "不利",
+                        "fact_ids": ["fact-0002"],
+                    }
+                ),
+            ],
+        }
+    )
+
+    conclusion = make_conclusion()
+    conclusion.overall.outlook = "吉中有阻"
+    result = validate_divination_conclusion(conclusion, context)
+
+    assert "mixed_evidence_not_balanced" in {
+        issue.code for issue in result.issues
+    }
+
+
+def test_favorable_bucket_rejects_adverse_decision_fact(sample_context) -> None:
+    context = sample_context.model_copy(
+        update={
+            "decision_guardrail": "正反证据并见",
+            "decision_evidence": [
+                *sample_context.decision_evidence,
+                sample_context.decision_evidence[0].model_copy(
+                    update={
+                        "evidence_id": "test-adverse",
+                        "direction": "不利",
+                        "fact_ids": ["fact-0002"],
+                    }
+                ),
+            ],
+        }
+    )
+    conclusion = make_conclusion()
+    conclusion.question_application.favorable = [
+        Judgement(statement="误把不利事实列作有利。", fact_ids=["fact-0002"])
+    ]
+
+    result = validate_divination_conclusion(conclusion, context)
+
+    assert "favorable_bucket_polarity_mismatch" in {
+        issue.code for issue in result.issues
+    }
+
+
+def test_directional_bucket_rejects_extra_nondecision_fact(
+    sample_context,
+) -> None:
+    conclusion = make_conclusion()
+    conclusion.question_application.favorable = [
+        Judgement(
+            statement="同时夹带普通事实作为有利依据。",
+            fact_ids=["fact-0001", "fact-0002"],
+        )
+    ]
+
+    result = validate_divination_conclusion(conclusion, sample_context)
+
+    assert "favorable_bucket_polarity_mismatch" in {
         issue.code for issue in result.issues
     }
 
@@ -468,28 +552,39 @@ def test_world_useful_god_requires_world_line_wording(sample_context) -> None:
     assert "useful_god_conflict" in {issue.code for issue in result.issues}
 
 
-def test_useful_god_decision_citations_must_be_verbatim(sample_context) -> None:
-    decision = UsefulGodDecision(
-        category="求财",
-        target="求财",
-        mode="relative",
-        useful_relative="妻财",
-        rationale="用户询问财物。",
-        citations=[
-            SourceCitation(
-                source_id="008_用神章:p0001",
-                quote="用神旺相，诸事可成",
+def test_response_useful_god_requires_response_line_wording(
+    sample_context,
+) -> None:
+    context = sample_context.model_copy(
+        update={
+            "useful_god": (
+                '{"status":"selected","selection_mode":"response",'
+                '"useful_relative":"兄弟","selected_line":6}'
             )
-        ],
+        }
     )
-    assert validate_useful_god_decision(
-        decision,
-        sample_context.sources,
-    ).valid is True
+    conclusion = make_conclusion()
+    conclusion.useful_god.useful_god = "上爻应爻（兄弟）"
+    assert validate_divination_conclusion(conclusion, context).valid is True
 
-    decision.citations[0].quote = "并非逐字原文"
-    result = validate_useful_god_decision(decision, sample_context.sources)
-    assert "citation_quote_mismatch" in {issue.code for issue in result.issues}
+    conclusion.useful_god.useful_god = "兄弟"
+    result = validate_divination_conclusion(conclusion, context)
+    assert "useful_god_conflict" in {issue.code for issue in result.issues}
+
+    conclusion.useful_god.useful_god = "世爻与应爻（兄弟）"
+    result = validate_divination_conclusion(conclusion, context)
+    assert "useful_god_conflict" in {issue.code for issue in result.issues}
+
+
+def test_relative_useful_god_rejects_world_or_response_relabeling(
+    sample_context,
+) -> None:
+    conclusion = make_conclusion()
+    conclusion.useful_god.useful_god = "妻财世爻"
+
+    result = validate_divination_conclusion(conclusion, sample_context)
+
+    assert "useful_god_conflict" in {issue.code for issue in result.issues}
 
 
 def test_forbidden_term_is_rejected(sample_context) -> None:

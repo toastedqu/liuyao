@@ -17,8 +17,12 @@ that was sent to it, and checks:
 7. the concrete question synthesis is backed by current-chart facts;
 8. every case comparison names a provided example and links that example's
    exact text and outcome to current-chart facts;
-9. ``不确定`` is reserved for an explicit unresolved conflict between
-   favorable and adverse evidence, not used as a generic safe fallback.
+9. ``overall.outlook`` is restricted to the exact set allowed by the
+   deterministic decision guardrail.
+10. overall direction and favorable/adverse buckets use only the
+    pre-classified useful-god decision evidence;
+11. worked-case citations remain confined to ``case_analysis`` and cannot
+    support the main outlook.
 
 ``ValidationResult.issues`` carries everything a caller (``app.divination.service``,
 not part of this task) needs to build exactly one correction round via
@@ -34,14 +38,13 @@ from typing import Iterable
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from app.llm.context import DivinationRequestContext, FactContext, SourceContext
+from app.llm.context import DivinationRequestContext, FactContext
 from app.llm.prompts import FORBIDDEN_TERMS
 from app.llm.schemas import (
     DivinationConclusion,
     Judgement,
     LineProperty,
     TimingSelection,
-    UsefulGodDecision,
 )
 
 
@@ -110,6 +113,12 @@ def validate_divination_conclusion(
     facts_by_id: dict[str, FactContext] = {fact.id: fact for fact in context.facts}
     source_ids = {source.source_id for source in context.sources}
     candidate_ids = {candidate.candidate_id for candidate in context.timing_candidates}
+    example_source_ids = {
+        source.source_id
+        for example in context.examples
+        for source in (example.question, example.chart, example.judgement)
+        if source is not None
+    }
     terms = tuple(forbidden_terms) if forbidden_terms is not None else tuple(FORBIDDEN_TERMS)
 
     issues: list[ValidationIssue] = []
@@ -117,7 +126,14 @@ def validate_divination_conclusion(
     for path, judgement in conclusion.iter_judgements():
         _check_judgement_evidence(path, judgement, issues)
         _check_fact_ids(path, judgement, facts_by_id, issues)
-        _check_citations(path, judgement, source_ids, context, issues)
+        _check_citations(
+            path,
+            judgement,
+            source_ids,
+            example_source_ids,
+            context,
+            issues,
+        )
         _check_line_assertions(path, judgement, facts_by_id, issues)
         _check_prose_line_claims(path, judgement, issues)
         _check_timing_claims(
@@ -129,7 +145,8 @@ def validate_divination_conclusion(
         )
         _check_forbidden_terms(f"{path}.statement", judgement.statement, terms, issues)
 
-    _check_question_application(conclusion, facts_by_id, issues)
+    _check_question_application(conclusion, context, facts_by_id, issues)
+    _check_outlook_direction(conclusion, context, issues)
     _check_case_analysis(conclusion, context, facts_by_id, issues)
     _check_useful_god(conclusion, context, issues)
     unstructured_texts = [
@@ -153,53 +170,6 @@ def validate_divination_conclusion(
     return ValidationResult(valid=not issues, issues=issues)
 
 
-def validate_useful_god_decision(
-    decision: UsefulGodDecision,
-    sources: list[SourceContext],
-    *,
-    forbidden_terms: Iterable[str] | None = None,
-) -> ValidationResult:
-    """Validate the first-stage model decision's citations and terminology."""
-    sources_by_id = {source.source_id: source for source in sources}
-    terms = tuple(forbidden_terms) if forbidden_terms is not None else tuple(FORBIDDEN_TERMS)
-    issues: list[ValidationIssue] = []
-
-    for index, citation in enumerate(decision.citations):
-        source = sources_by_id.get(citation.source_id)
-        if source is None:
-            issues.append(
-                ValidationIssue(
-                    code="unknown_source_id",
-                    path=f"citations[{index}].source_id",
-                    message=(
-                        f"用神判定引用了未提供的原文出处「{citation.source_id}」；"
-                        "只能引用本轮给出的用神原文。"
-                    ),
-                    details={"source_id": citation.source_id},
-                )
-            )
-            continue
-        if citation.quote.strip() not in source.text:
-            issues.append(
-                ValidationIssue(
-                    code="citation_quote_mismatch",
-                    path=f"citations[{index}].quote",
-                    message=(
-                        f"用神判定引用「{citation.source_id}」的文字「{citation.quote}」"
-                        "与知识库原文不完全一致，必须逐字摘录。"
-                    ),
-                    details={
-                        "source_id": citation.source_id,
-                        "quote": citation.quote,
-                    },
-                )
-            )
-
-    _check_forbidden_terms("target", decision.target, terms, issues)
-    _check_forbidden_terms("rationale", decision.rationale, terms, issues)
-    return ValidationResult(valid=not issues, issues=issues)
-
-
 def _judgement_fact_ids(judgement: Judgement) -> set[str]:
     return set(judgement.fact_ids) | {
         assertion.fact_id
@@ -210,6 +180,7 @@ def _judgement_fact_ids(judgement: Judgement) -> set[str]:
 
 def _check_question_application(
     conclusion: DivinationConclusion,
+    context: DivinationRequestContext,
     facts_by_id: dict[str, FactContext],
     issues: list[ValidationIssue],
 ) -> None:
@@ -227,40 +198,166 @@ def _check_question_application(
             )
         )
 
-    if conclusion.overall.outlook != "不确定":
-        return
-
-    favorable_ids = set().union(
-        *(
-            _judgement_fact_ids(judgement) & facts_by_id.keys()
-            for judgement in conclusion.question_application.favorable
-        ),
-        set(),
-    )
-    adverse_ids = set().union(
-        *(
-            _judgement_fact_ids(judgement) & facts_by_id.keys()
-            for judgement in conclusion.question_application.adverse
-        ),
-        set(),
-    )
-    synthesis_ids = _judgement_fact_ids(synthesis) & facts_by_id.keys()
-    has_two_sided_conflict = (
-        bool(favorable_ids - adverse_ids)
-        and bool(adverse_ids - favorable_ids)
-        and bool(synthesis_ids & favorable_ids)
-        and bool(synthesis_ids & adverse_ids)
-    )
-    if not has_two_sided_conflict:
+    decision_ids = {
+        fact_id
+        for evidence in context.decision_evidence
+        for fact_id in evidence.fact_ids
+    }
+    favorable_ids = {
+        fact_id
+        for evidence in context.decision_evidence
+        if evidence.direction == "有利"
+        for fact_id in evidence.fact_ids
+    }
+    adverse_ids = {
+        fact_id
+        for evidence in context.decision_evidence
+        if evidence.direction == "不利"
+        for fact_id in evidence.fact_ids
+    }
+    synthesis_ids = _judgement_fact_ids(synthesis)
+    if decision_ids and not (synthesis_ids & decision_ids):
         issues.append(
             ValidationIssue(
-                code="uncertain_without_explicit_conflict",
+                code="question_synthesis_missing_decision_fact",
+                path="question_application.synthesis",
+                message=(
+                    "对用户具体问题的综合判断没有引用任何本卦裁决证据；"
+                    "主卦名、六冲、元神或忌神出现等普通事实不能决定吉凶，"
+                    "synthesis 必须引用裁决证据列出的 fact_id。"
+                ),
+            )
+        )
+
+    for index, judgement in enumerate(conclusion.question_application.favorable):
+        cited = _judgement_fact_ids(judgement)
+        if not cited or not cited <= favorable_ids:
+            issues.append(
+                ValidationIssue(
+                    code="favorable_bucket_polarity_mismatch",
+                    path=f"question_application.favorable[{index}].fact_ids",
+                    message=(
+                        f"有利因素「{judgement.statement}」没有只引用标为“有利”的"
+                        "本卦裁决证据；不得把不利证据或普通排盘事实包装成有利因素。"
+                    ),
+                )
+            )
+
+    for index, judgement in enumerate(conclusion.question_application.adverse):
+        cited = _judgement_fact_ids(judgement)
+        if not cited or not cited <= adverse_ids:
+            issues.append(
+                ValidationIssue(
+                    code="adverse_bucket_polarity_mismatch",
+                    path=f"question_application.adverse[{index}].fact_ids",
+                    message=(
+                        f"不利因素「{judgement.statement}」没有只引用标为“不利”的"
+                        "本卦裁决证据；不得把有利证据或普通排盘事实包装成不利因素。"
+                    ),
+                )
+            )
+
+def _check_outlook_direction(
+    conclusion: DivinationConclusion,
+    context: DivinationRequestContext,
+    issues: list[ValidationIssue],
+) -> None:
+    by_direction: dict[str, set[str]] = {
+        "有利": set(),
+        "不利": set(),
+    }
+    primary_by_direction: dict[str, set[str]] = {
+        "有利": set(),
+        "不利": set(),
+    }
+    for evidence in context.decision_evidence:
+        if evidence.direction not in by_direction:
+            continue
+        by_direction[evidence.direction].update(evidence.fact_ids)
+        if evidence.weight == "主证":
+            primary_by_direction[evidence.direction].update(evidence.fact_ids)
+
+    overall_ids = set().union(
+        *(
+            _judgement_fact_ids(judgement)
+            for judgement in conclusion.overall.judgements
+        ),
+        _judgement_fact_ids(conclusion.question_application.synthesis),
+    )
+    synthesis_ids = _judgement_fact_ids(conclusion.question_application.synthesis)
+    outlook = conclusion.overall.outlook
+    allowed_by_guardrail = {
+        "仅有利主证": {"吉"},
+        "仅不利主证": {"凶"},
+        "正反证据并见": {"吉中有阻", "凶中有救"},
+        "暂不裁决": {"需再占"},
+    }
+    allowed = allowed_by_guardrail.get(
+        context.decision_guardrail,
+        {"需再占"},
+    )
+    if outlook not in allowed:
+        issues.append(
+            ValidationIssue(
+                code="outlook_not_allowed_by_guardrail",
                 path="overall.outlook",
                 message=(
-                    "总体结论选择了“不确定”，但有利与不利部分没有分别引用不同的"
-                    "本卦事实，或 synthesis 没有同时综合两侧事实。"
-                    "没有完全相同的原文或卦例不能作为不确定的理由；若证据已有方向，"
-                    "请改判吉、凶或平，只有无法分出主次的直接冲突才可保留不确定。"
+                    f"质量控制为“{context.decision_guardrail}”时，"
+                    f"overall.outlook 只能是“{'”或“'.join(sorted(allowed))}”，"
+                    f"不得输出“{outlook}”。"
+                ),
+            )
+        )
+
+    required_direction = {
+        "吉": "有利",
+        "吉中有阻": "有利",
+        "凶": "不利",
+        "凶中有救": "不利",
+    }.get(outlook)
+    if required_direction is not None:
+        if not (overall_ids & by_direction[required_direction]):
+            issues.append(
+                ValidationIssue(
+                    code="directional_outlook_missing_matching_evidence",
+                    path="overall.outlook",
+                    message=(
+                        f"总体结论判为“{outlook}”，但 overall 与 synthesis 没有引用"
+                        f"任何标为“{required_direction}”的本卦裁决证据。卦例结果、"
+                        "普通卦名或元忌出现不能替代方向证据。"
+                    ),
+                )
+            )
+        if (
+            context.decision_guardrail == "暂不裁决"
+            and not (overall_ids & primary_by_direction[required_direction])
+        ):
+            issues.append(
+                ValidationIssue(
+                    code="abstained_guardrail_lacks_primary_evidence",
+                    path="overall.outlook",
+                    message=(
+                        f"质量控制为“暂不裁决”，输出却判为“{outlook}”，且没有引用"
+                        f"“{required_direction}”主证；仅凭休囚等辅证不得强行定向。"
+                    ),
+                )
+            )
+
+    if (
+        context.decision_guardrail == "正反证据并见"
+        and outlook in {"吉中有阻", "凶中有救"}
+        and not (
+            synthesis_ids & by_direction["有利"]
+            and synthesis_ids & by_direction["不利"]
+        )
+    ):
+        issues.append(
+            ValidationIssue(
+                code="mixed_evidence_not_balanced",
+                path="question_application.synthesis.fact_ids",
+                message=(
+                    "本卦正反裁决证据并见；synthesis 必须同时引用有利与不利"
+                    "两侧事实并说明何者为主，不能只挑一侧。"
                 ),
             )
         )
@@ -280,8 +377,8 @@ def _check_case_analysis(
                 code="case_comparison_required",
                 path="case_analysis.comparisons",
                 message=(
-                    "本轮提供了一个候选卦例，但输出没有进行实例比照；"
-                    "请说明该例与本卦的相似点、差异和对本问的可迁移结论。"
+                    "本轮提供了候选卦例，但输出没有进行实例比照；"
+                    "请说明该例与本卦的相似点、差异和方法参考边界。"
                 ),
             )
         )
@@ -343,27 +440,10 @@ def _check_case_analysis(
                         path=f"{path}.{field}.fact_ids",
                         message=(
                             f"卦例「{comparison.example_id}」的{field}没有引用本卦 fact_id；"
-                            "实例只能在本卦事实支持下类比，不能直接套用原例结论。"
+                            "实例只能在本卦事实约束下作方法参考，不能直接套用原例结论。"
                         ),
                     )
                 )
-
-        application_citations = {
-            citation.source_id for citation in comparison.application.citations
-        }
-        if example.judgement.source_id not in application_citations:
-            issues.append(
-                ValidationIssue(
-                    code="case_application_missing_outcome",
-                    path=f"{path}.application.citations",
-                    message=(
-                        f"卦例「{comparison.example_id}」的迁移判断没有引用其原断语"
-                        f"「{example.judgement.source_id}」；必须先说明原例如何断，"
-                        "再结合本卦事实决定哪些结论可迁移。"
-                    ),
-                )
-            )
-
 
 def _check_useful_god(
     conclusion: DivinationConclusion,
@@ -384,17 +464,24 @@ def _check_useful_god(
             mode = expected.get("selection_mode")
             expected_relative = relative if isinstance(relative, str) else None
             expected_line = line if isinstance(line, int) else None
-            expected_mode = mode if mode in {"world", "relative"} else None
+            expected_mode = (
+                mode if mode in {"world", "response", "relative"} else None
+            )
         elif isinstance(expected, str):
             expected_relative = expected
 
-    if expected_mode != "world" and expected_relative not in _RELATIVE_NAMES:
+    if (
+        expected_mode not in {"world", "response"}
+        and expected_relative not in _RELATIVE_NAMES
+    ):
         return
 
     actual = conclusion.useful_god.useful_god
     mentioned = {relative for relative in _RELATIVE_NAMES if relative in actual}
-    if expected_mode == "world":
-        conflict = "世爻" not in actual
+    if expected_mode in {"world", "response"}:
+        expected_role = "世爻" if expected_mode == "world" else "应爻"
+        opposite_role = "应爻" if expected_mode == "world" else "世爻"
+        conflict = expected_role not in actual or opposite_role in actual
         if mentioned:
             conflict = (
                 conflict
@@ -402,8 +489,11 @@ def _check_useful_god(
                 or bool(mentioned - {expected_relative})
             )
     else:
-        conflict = expected_relative not in mentioned or bool(
-            mentioned - {expected_relative}
+        conflict = (
+            expected_relative not in mentioned
+            or bool(mentioned - {expected_relative})
+            or "世爻" in actual
+            or "应爻" in actual
         )
     line_matches = list(_LINE_REFERENCE_RE.finditer(actual))
     if line_matches:
@@ -415,8 +505,8 @@ def _check_useful_god(
                 code="useful_god_conflict",
                 path="useful_god.useful_god",
                 message=(
-                    f"断卦输出的用神「{actual}」与前置模型判定并由代码定位的用神"
-                    f"「{'世爻' if expected_mode == 'world' else expected_relative}"
+                    f"断卦输出的用神「{actual}」与用户选择并由代码定位的用神"
+                    f"「{('世爻' if expected_mode == 'world' else '应爻') if expected_mode in {'world', 'response'} else expected_relative}"
                     f"{f'（第{expected_line}爻）' if expected_line else ''}」不一致；"
                     "断卦阶段不得重新选择或改写用神。"
                 ),
@@ -479,11 +569,28 @@ def _check_citations(
     path: str,
     judgement: Judgement,
     source_ids: set[str],
+    example_source_ids: set[str],
     context: DivinationRequestContext,
     issues: list[ValidationIssue],
 ) -> None:
     sources_by_id = {source.source_id: source for source in context.sources}
     for i, citation in enumerate(judgement.citations):
+        if (
+            citation.source_id in example_source_ids
+            and not path.startswith("case_analysis.")
+        ):
+            issues.append(
+                ValidationIssue(
+                    code="case_citation_outside_reference",
+                    path=f"{path}.citations[{i}].source_id",
+                    message=(
+                        f"判断「{judgement.statement}」在主结论中引用了卦例出处"
+                        f"「{citation.source_id}」；卦例只能出现在 case_analysis"
+                        " 的参考比照中，不能支撑总体吉凶。"
+                    ),
+                    details={"source_id": citation.source_id},
+                )
+            )
         if citation.source_id not in source_ids:
             issues.append(
                 ValidationIssue(

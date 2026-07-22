@@ -21,12 +21,12 @@ from app.llm.schemas import (
     MonthDayAnalysis,
     MovingLinesAnalysis,
     OverallConclusion,
+    QuestionCategory,
     QuestionApplication,
     RisksAndUncertainties,
     SourceCitation,
     SpecialPatternsAnalysis,
     TimingSelection,
-    UsefulGodDecision,
     UsefulGodAnalysis,
 )
 from app.main import app
@@ -57,9 +57,12 @@ class SequenceProvider:
 def request_payload(
     *,
     question: str = "本次求财是否可成？",
+    lines: list[int] | None = None,
+    useful_god: str = "妻财",
 ) -> dict:
     return {
         "question": question,
+        "useful_god": useful_god,
         "calendar": {
             "year": 2026,
             "month": 7,
@@ -67,30 +70,22 @@ def request_payload(
             "hour": 9,
             "timezone": "Asia/Shanghai",
         },
-        "lines": [7, 8, 6, 9, 7, 8],
+        "lines": lines or [6, 7, 8, 7, 7, 7],
     }
 
 
-def useful_god_decision(*, valid_source: bool = True) -> UsefulGodDecision:
-    citation = (
-        SourceCitation(
-            source_id="008_用神章:p0006",
-            quote="占货财、珠宝、金银、仓库、钱粮",
-        )
-        if valid_source
-        else SourceCitation(source_id="999_伪造章:p0001", quote="伪造原文")
-    )
-    return UsefulGodDecision(
-        category="求财",
-        target="本次求财",
-        mode="relative",
-        useful_relative="妻财",
-        rationale="用户询问求财，依原文以妻财爻为用神。",
-        citations=[citation],
-    )
+def question_category(
+    category: str = "求财",
+    perspective: str = "自占",
+) -> QuestionCategory:
+    return QuestionCategory(category=category, perspective=perspective)
 
 
-def conclusion(*, valid_source: bool = True) -> DivinationConclusion:
+def conclusion(
+    *,
+    valid_source: bool = True,
+    include_case: bool = True,
+) -> DivinationConclusion:
     citation = (
         SourceCitation(
             source_id="008_用神章:p0006",
@@ -100,34 +95,35 @@ def conclusion(*, valid_source: bool = True) -> DivinationConclusion:
         else SourceCitation(source_id="999_伪造章:p0001", quote="伪造原文")
     )
     judgement = Judgement(
-        statement="排盘事实与原文均已列出，现有证据不足以作确定吉凶。",
-        fact_ids=["fact-primary-hexagram"],
+        statement="日辰比扶用神，本次求财有成事基础。",
+        fact_ids=["fact-day-relation-l5"],
         citations=[citation],
     )
     return DivinationConclusion(
         overall=OverallConclusion(
-            outlook="凶",
-            summary="本次求财偏难",
+            outlook="吉",
+            summary="本次求财有利",
             judgements=[judgement],
         ),
         question_application=QuestionApplication(
             focus="本次所问求财能否办成",
-            favorable=[],
-            adverse=[
+            favorable=[
                 Judgement(
-                    statement="本卦不利因素应落实为本次求财推进困难。",
-                    fact_ids=["fact-primary-hexagram"],
+                    statement="日辰比扶用神，落实到本问为求财有助力。",
+                    fact_ids=["fact-day-relation-l5"],
                 )
             ],
+            adverse=[],
             synthesis=Judgement(
-                statement="综合本卦事实，本次求财偏难，不只是抽象术语判断。",
-                fact_ids=["fact-primary-hexagram"],
+                statement="本卦只有利主证，本次求财可按有利方向判断。",
+                fact_ids=["fact-day-relation-l5"],
             ),
         ),
         case_analysis=CaseAnalysis(
             comparisons=[
                 CaseComparison(
                     example_id=CASE_ID,
+                    role="reference_only",
                     similarities=Judgement(
                         statement="本卦与原例同属求财问题，可比较财事成败。",
                         fact_ids=["fact-primary-hexagram"],
@@ -160,6 +156,8 @@ def conclusion(*, valid_source: bool = True) -> DivinationConclusion:
                     ),
                 )
             ]
+            if include_case
+            else []
         ),
         useful_god=UsefulGodAnalysis(useful_god="妻财", judgements=[]),
         month_day=MonthDayAnalysis(judgements=[]),
@@ -209,7 +207,12 @@ def override_cleanup() -> Iterator[None]:
 
 
 def test_chart_api_is_fully_deterministic_without_llm_configuration() -> None:
-    response = TestClient(app).post("/api/v1/chart", json=request_payload())
+    payload = request_payload(lines=[7, 8, 6, 9, 7, 8])
+    payload.pop("useful_god")
+    response = TestClient(app).post(
+        "/api/v1/chart",
+        json=payload,
+    )
 
     assert response.status_code == 200
     payload = response.json()
@@ -232,7 +235,7 @@ def test_chart_api_is_fully_deterministic_without_llm_configuration() -> None:
 async def test_full_pipeline_retries_invalid_citation_once(knowledge_db: Path) -> None:
     provider = SequenceProvider(
         [
-            useful_god_decision(),
+            question_category(),
             conclusion(valid_source=False),
             conclusion(valid_source=True),
         ]
@@ -243,27 +246,65 @@ async def test_full_pipeline_retries_invalid_citation_once(knowledge_db: Path) -
         DivinationRequest.model_validate(request_payload())
     )
 
-    assert response.interpretation.overall.outlook == "凶"
+    assert response.interpretation.overall.outlook == "吉"
     assert len(provider.calls) == 3
     assert provider.schemas == [
-        UsefulGodDecision,
+        QuestionCategory,
         DivinationConclusion,
         DivinationConclusion,
     ]
     assert "上一次的结构化结果未通过校验" in provider.calls[2][-1].content
     assert response.sources
     assert response.case_evidence
-    assert len(response.case_evidence) == 1
+    assert len(response.case_evidence) == 3
     assert response.case_evidence[0].judgement.content_type.value == "example_judgement"
     assert all(not source.is_editorial for source in response.sources)
     assert any(source.source_id == "008_用神章:p0006" for source in response.sources)
 
 
 @pytest.mark.asyncio
+async def test_full_pipeline_corrects_false_adverse_outlook(
+    knowledge_db: Path,
+) -> None:
+    false_adverse = conclusion()
+    false_adverse.overall.outlook = "凶"
+    false_adverse.overall.summary = "受参考卦例影响而误判为凶"
+    false_adverse.overall.judgements[0].fact_ids = ["fact-primary-hexagram"]
+    false_adverse.question_application.favorable = []
+    false_adverse.question_application.adverse = [
+        Judgement(
+            statement="误把普通卦名当成不利证据。",
+            fact_ids=["fact-primary-hexagram"],
+        )
+    ]
+    false_adverse.question_application.synthesis.fact_ids = [
+        "fact-primary-hexagram"
+    ]
+    provider = SequenceProvider(
+        [
+            question_category(),
+            false_adverse,
+            conclusion(),
+        ]
+    )
+    divination = service(knowledge_db, provider)
+
+    response = await divination.divine(
+        DivinationRequest.model_validate(request_payload())
+    )
+
+    assert response.interpretation.overall.outlook == "吉"
+    assert len(provider.calls) == 3
+    correction_prompt = provider.calls[2][-1].content
+    assert "overall.outlook 只能是“吉”，不得输出“凶”" in correction_prompt
+    assert "普通排盘事实包装成不利因素" in correction_prompt
+
+
+@pytest.mark.asyncio
 async def test_full_pipeline_refuses_second_invalid_result(knowledge_db: Path) -> None:
     provider = SequenceProvider(
         [
-            useful_god_decision(),
+            question_category(),
             conclusion(valid_source=False),
             conclusion(valid_source=False),
         ]
@@ -286,7 +327,7 @@ def test_divination_api_returns_structured_result(
     override_cleanup: None,
 ) -> None:
     provider = SequenceProvider(
-        [useful_god_decision(), conclusion(valid_source=True)]
+        [question_category(), conclusion(valid_source=True)]
     )
     app.dependency_overrides[get_divination_service] = lambda: service(
         knowledge_db,
@@ -300,10 +341,11 @@ def test_divination_api_returns_structured_result(
 
     assert response.status_code == 200
     payload = response.json()
-    assert payload["interpretation"]["overall"]["outlook"] == "凶"
+    assert payload["interpretation"]["overall"]["outlook"] == "吉"
+    assert payload["outcome_analysis"]["guardrail"] == "仅有利主证"
     assert payload["sources"]
     assert payload["case_evidence"]
-    assert len(payload["case_evidence"]) == 1
+    assert len(payload["case_evidence"]) == 3
     assert payload["case_evidence"][0]["match_reasons"]
     assert payload["input_summary"]["category"] == "求财"
     assert payload["useful_god"]["selection_mode"] == "relative"
@@ -317,7 +359,7 @@ def test_question_with_multiple_topics_is_classified_by_model(
     override_cleanup: None,
 ) -> None:
     provider = SequenceProvider(
-        [useful_god_decision(), conclusion(valid_source=True)]
+        [question_category(), conclusion(valid_source=True)]
     )
     app.dependency_overrides[get_divination_service] = lambda: service(
         knowledge_db,
@@ -334,16 +376,12 @@ def test_question_with_multiple_topics_is_classified_by_model(
     assert len(provider.calls) == 2
 
 
-def test_invalid_useful_god_citation_is_corrected_before_interpretation(
+def test_user_selected_useful_god_never_requires_semantic_resolution(
     knowledge_db: Path,
     override_cleanup: None,
 ) -> None:
     provider = SequenceProvider(
-        [
-            useful_god_decision(valid_source=False),
-            useful_god_decision(valid_source=True),
-            conclusion(valid_source=True),
-        ]
+        [question_category(), conclusion(valid_source=True)]
     )
     app.dependency_overrides[get_divination_service] = lambda: service(
         knowledge_db,
@@ -356,13 +394,69 @@ def test_invalid_useful_god_citation_is_corrected_before_interpretation(
     )
 
     assert response.status_code == 200
-    assert len(provider.calls) == 3
-    assert provider.schemas == [
-        UsefulGodDecision,
-        UsefulGodDecision,
-        DivinationConclusion,
-    ]
-    assert "用神判定引用了未提供的原文出处" in provider.calls[1][-1].content
+    assert response.json()["useful_god"]["useful_relative"] == "妻财"
+    assert len(provider.calls) == 2
+    assert provider.schemas == [QuestionCategory, DivinationConclusion]
+
+
+@pytest.mark.asyncio
+async def test_romance_question_uses_the_user_selected_useful_god(
+    knowledge_db: Path,
+) -> None:
+    provider = SequenceProvider(
+        [
+            question_category("婚姻"),
+            conclusion(valid_source=True, include_case=False),
+        ]
+    )
+    divination = service(knowledge_db, provider)
+    retrieve = divination._retrieve_knowledge
+
+    def retrieve_without_examples(result):
+        knowledge = retrieve(result)
+        return type(knowledge)(sources=knowledge.sources, examples=())
+
+    divination._retrieve_knowledge = retrieve_without_examples  # type: ignore[method-assign]
+    response = await divination.divine(
+        DivinationRequest.model_validate(
+            request_payload(
+                question="我的恋爱关系会如何发展？",
+                useful_god="妻财",
+            )
+        )
+    )
+
+    assert response.input_summary.category == "婚姻"
+    assert response.input_summary.perspective == "自占"
+    assert response.useful_god is not None
+    assert response.useful_god.useful_relative == "妻财"
+    assert response.useful_god.status == "selected"
+    assert provider.schemas == [QuestionCategory, DivinationConclusion]
+
+
+def test_proxy_perspective_reaches_rule_and_response_context(
+    knowledge_db: Path,
+    override_cleanup: None,
+) -> None:
+    provider = SequenceProvider(
+        [
+            question_category("求财", perspective="代占"),
+            conclusion(valid_source=True),
+        ]
+    )
+    app.dependency_overrides[get_divination_service] = lambda: service(
+        knowledge_db,
+        provider,
+    )
+
+    response = TestClient(app).post(
+        "/api/v1/divinations",
+        json=request_payload(question="替朋友问这笔生意能否获利？"),
+    )
+
+    assert response.status_code == 200
+    assert response.json()["input_summary"]["perspective"] == "代占"
+    assert "模型判定问占视角：代占" in provider.calls[1][1].content
 
 
 def test_source_api_returns_exact_local_text(
@@ -370,7 +464,7 @@ def test_source_api_returns_exact_local_text(
     override_cleanup: None,
 ) -> None:
     provider = SequenceProvider(
-        [useful_god_decision(), conclusion(valid_source=True)]
+        [question_category(), conclusion(valid_source=True)]
     )
     app.dependency_overrides[get_divination_service] = lambda: service(
         knowledge_db,

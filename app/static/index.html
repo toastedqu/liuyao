@@ -16,9 +16,25 @@
         <textarea
           id="question"
           maxlength="500"
-          placeholder="请在这里写清楚所问的人、事及关系；模型将仅根据这段文字判定用神。"
+          placeholder="请在这里写清楚所问的人、事及关系。"
           required
         ></textarea>
+
+        <label for="useful-god">用神</label>
+        <select id="useful-god" name="useful_god" required>
+          <option value="" selected disabled>请选择用神</option>
+          <option value="世爻">世爻（问自身或以自己为主）</option>
+          <option value="应爻">应爻（问对方或外人）</option>
+          <option value="父母">父母（父母、长辈、文书、宅舍等）</option>
+          <option value="兄弟">兄弟（兄弟姐妹、同辈等）</option>
+          <option value="官鬼">官鬼（丈夫、功名、官府等）</option>
+          <option value="妻财">妻财（妻子、财物等）</option>
+          <option value="子孙">子孙（子女、晚辈、医药等）</option>
+        </select>
+        <small>
+          只选择用神类别；若卦中同类爻两现，具体主用爻由系统依据《增删卜易》确定。
+          婚恋通常男问女取妻财，女问男取官鬼。
+        </small>
 
         <fieldset>
           <legend>公历时间（Asia/Shanghai）</legend>
@@ -34,7 +50,7 @@
           <legend>六爻（初爻在下、上爻在上）</legend>
         </fieldset>
 
-        <button id="submit" type="submit">判定用神、排盘并断卦</button>
+        <button id="submit" type="submit">排盘并断卦</button>
       </form>
 
       <p id="error" role="alert" hidden></p>

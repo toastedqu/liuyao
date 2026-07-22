@@ -4,7 +4,13 @@ from __future__ import annotations
 
 import pytest
 
-from app.llm.context import DivinationRequestContext, FactContext, SourceContext, TimingCandidateContext
+from app.llm.context import (
+    DecisionEvidenceContext,
+    DivinationRequestContext,
+    FactContext,
+    SourceContext,
+    TimingCandidateContext,
+)
 from app.llm.schemas import (
     CaseAnalysis,
     DivinationConclusion,
@@ -30,6 +36,7 @@ def sample_context() -> DivinationRequestContext:
     return DivinationRequestContext(
         question="本次求财是否可成？",
         category="求财",
+        perspective="自占",
         chart_summary={"gua_name": "水地比", "palace": "坤宫"},
         useful_god=(
             '{"selection_mode":"relative","useful_relative":"妻财",'
@@ -52,6 +59,16 @@ def sample_context() -> DivinationRequestContext:
                 value=True,
                 property=LineProperty.DONG,
             ),
+        ],
+        decision_guardrail="仅有利主证",
+        decision_evidence=[
+            DecisionEvidenceContext(
+                evidence_id="test-favorable",
+                direction="有利",
+                weight="主证",
+                description="测试夹具将 fact-0001 作为有利裁决证据。",
+                fact_ids=["fact-0001"],
+            )
         ],
         timing_candidates=[
             TimingCandidateContext(

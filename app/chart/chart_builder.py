@@ -165,7 +165,7 @@ def build_chart(
                         "element": primary_line.element.value,
                         "relative": primary_relatives[index].value,
                     },
-                    rule_source="004_混天甲子章:example0001:chart",
+                    rule_source="004_混天甲子章:p0001",
                 ),
             )
         )
@@ -181,7 +181,7 @@ def build_chart(
                         "element": hidden.element.value,
                         "source_hexagram": hidden.source_hexagram,
                     },
-                    rule_source="035_飞伏神章:example0001:question",
+                    rule_source="035_飞伏神章:p0001",
                 )
             )
 
@@ -192,14 +192,14 @@ def build_chart(
                 type="WORLD_LINE",
                 line=primary.world_line,
                 value=True,
-                rule_source="006_世应章:example0001:chart",
+                rule_source="006_世应章:p0001",
             ),
             ChartFact(
                 id=f"fact-response-line-l{primary.response_line}",
                 type="RESPONSE_LINE",
                 line=primary.response_line,
                 value=True,
-                rule_source="006_世应章:example0001:judgement",
+                rule_source="006_世应章:p0002",
             ),
         )
     )

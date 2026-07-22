@@ -5,12 +5,12 @@ The parser never rewrites, reflows, or normalizes original text. Every
 of the source file, sliced by character offset, so verbatim-quote checks and
 source round-trips are simple equality tests instead of heuristics.
 
-Block splitting treats fenced ```...``` hexagram diagrams as atomic (blank
-lines inside a fence do not end the block), then classifies each block as a
-heading, an editorial aside, a plain rule/commentary paragraph, or -- when a
-fenced block is found -- the chart of a 卦例 (worked example), pairing it
-with the immediately preceding block (question) and immediately following
-block (judgement) when available.
+Block splitting treats fenced ```...``` blocks as atomic (blank lines inside
+a fence do not end the block). A fenced 六爻 diagram is kept as theory when
+its introduction explicitly presents it as a hypothetical illustration;
+other diagrams are indexed as worked cases. A worked chart is paired with
+the preceding question and the complete judgement span up to the next case
+or section boundary.
 """
 
 from __future__ import annotations
@@ -48,6 +48,18 @@ EDITORIAL_START_RE = re.compile(
     rf"^\*{{0,2}}[\[［]({_EDITORIAL_MARKER_ALT})[\]］]\*{{0,2}}\s*"
 )
 HEXAGRAM_NAME_RE = re.compile(r"[“\"]([^”\"]{2,8})[”\"]")
+GANZHI_DAY_RE = re.compile(r"[甲乙丙丁戊己庚辛壬癸][子丑寅卯辰巳午未申酉戌亥]日")
+DIDACTIC_CHART_RE = re.compile(r"(?:假令占得|^又如[：:]?占得)")
+JUDGEMENT_CONTINUATION_RE = re.compile(
+    r"^(?:"
+    r"古法|余|断曰|彼|问|此|果|后|次|翌|乃|盖|"
+    r"殊不知|按|或曰|李我平曰|觉子曰|野鹤曰|岂|若以|卜书|"
+    r"及至|不意|至"
+    r")"
+)
+RECAST_BRIDGE_RE = re.compile(
+    r"(?:再占|又占|次占|复占|自占|又得|再得|命.{0,8}占|令.{0,8}占)"
+)
 
 
 @dataclass
@@ -143,6 +155,49 @@ def _fence_inner_span(block: _Block) -> tuple[int, int, str]:
     inner_start = block.start + first_line_len + 1  # +1 for the newline
     inner_end = inner_start + len(inner_text)
     return inner_start, inner_end, inner_text
+
+
+def _looks_like_example_chart(text: str) -> bool:
+    return "━" in text and ("宫：" in text or "宫:" in text)
+
+
+def _is_didactic_chart_intro(text: str) -> bool:
+    compact = re.sub(r"[\s，,]", "", text)
+    return GANZHI_DAY_RE.search(compact) is None and bool(
+        DIDACTIC_CHART_RE.search(compact)
+    )
+
+
+def _is_case_boundary(blocks: list[_Block], index: int) -> bool:
+    stripped = blocks[index].text.strip()
+    if (
+        DIVIDER_RE.match(stripped)
+        or HEADING_LINE_RE.match(stripped)
+        or FENCE_MARKER_RE.match(stripped)
+        or EDITORIAL_START_RE.match(stripped)
+    ):
+        return True
+    if index + 1 >= len(blocks):
+        return False
+    next_block = blocks[index + 1]
+    if not FENCE_MARKER_RE.match(next_block.text.strip()):
+        return False
+    return _looks_like_example_chart(_fence_inner_span(next_block)[2])
+
+
+def _looks_like_judgement_continuation(text: str) -> bool:
+    return bool(JUDGEMENT_CONTINUATION_RE.match(text.strip()))
+
+
+def _is_recast_bridge(blocks: list[_Block], index: int) -> bool:
+    if index + 1 >= len(blocks):
+        return False
+    next_block = blocks[index + 1]
+    if not FENCE_MARKER_RE.match(next_block.text.strip()):
+        return False
+    if not _looks_like_example_chart(_fence_inner_span(next_block)[2]):
+        return False
+    return bool(RECAST_BRIDGE_RE.search(blocks[index].text))
 
 
 def parse_chapter(path: Path, repo_root: Path | None = None) -> ChapterParseResult:
@@ -254,6 +309,45 @@ def parse_chapter(path: Path, repo_root: Path | None = None) -> ChapterParseResu
             continue
 
         if FENCE_MARKER_RE.match(stripped):
+            chart_start, chart_end, chart_text = _fence_inner_span(block)
+            previous_text = blocks[i - 1].text if i > 0 else ""
+            if (
+                not _looks_like_example_chart(chart_text)
+                or _is_didactic_chart_intro(previous_text)
+            ):
+                content_type = (
+                    ContentType.EDITORIAL
+                    if current_editorial_mode
+                    else ContentType.RULE
+                )
+                seq, source_id = next_paragraph_id()
+                paragraphs.append(
+                    ParagraphRecord(
+                        source_id=source_id,
+                        chapter_id=chapter_id,
+                        seq=seq,
+                        content_type=content_type,
+                        layer=(
+                            Layer.EDITORIAL
+                            if content_type == ContentType.EDITORIAL
+                            else layer
+                        ),
+                        section_title=current_section,
+                        text=chart_text,
+                        is_editorial=content_type == ContentType.EDITORIAL,
+                        attributions=_detect_attributions(chart_text),
+                        rule_tags=_detect_rule_tags(chart_text),
+                        topic_tags=_detect_topic_tags(chart_text),
+                        category_tags=list(category_tags),
+                        source_path=source_path,
+                        source_sha256=sha256,
+                        char_start=chart_start,
+                        char_end=chart_end,
+                    )
+                )
+                i += 1
+                continue
+
             example_seq += 1
             example_id = f"{chapter_id}:example{example_seq:04d}"
 
@@ -286,7 +380,6 @@ def parse_chapter(path: Path, repo_root: Path | None = None) -> ChapterParseResu
                     )
                 )
 
-            chart_start, chart_end, chart_text = _fence_inner_span(block)
             chart_id = f"{example_id}:chart"
             paragraphs.append(
                 ParagraphRecord(
@@ -309,37 +402,62 @@ def parse_chapter(path: Path, repo_root: Path | None = None) -> ChapterParseResu
 
             judgement_id = None
             judgement_text = ""
-            if i + 1 < n:
-                nxt = blocks[i + 1]
-                nxt_stripped = nxt.text.strip()
-                if not DIVIDER_RE.match(nxt_stripped) and not HEADING_LINE_RE.match(
-                    nxt_stripped
-                ) and not FENCE_MARKER_RE.match(nxt_stripped):
-                    judgement_id = f"{example_id}:judgement"
-                    judgement_text = nxt.text
-                    is_editorial = bool(EDITORIAL_START_RE.match(nxt_stripped))
-                    paragraphs.append(
-                        ParagraphRecord(
-                            source_id=judgement_id,
-                            chapter_id=chapter_id,
-                            seq=-1,
-                            content_type=ContentType.EXAMPLE_JUDGEMENT,
-                            layer=Layer.EXAMPLE,
-                            section_title=current_section,
-                            text=judgement_text,
-                            is_editorial=is_editorial or current_editorial_mode,
-                            attributions=_detect_attributions(judgement_text),
-                            rule_tags=_detect_rule_tags(judgement_text),
-                            topic_tags=_detect_topic_tags(judgement_text),
-                            category_tags=list(category_tags),
-                            example_id=example_id,
-                            source_path=source_path,
-                            source_sha256=sha256,
-                            char_start=nxt.start,
-                            char_end=nxt.end,
-                        )
+            judgement_blocks: list[_Block] = []
+            next_index = i + 1
+            while next_index < n and not _is_case_boundary(
+                blocks,
+                next_index,
+            ):
+                if (
+                    judgement_blocks
+                    and blocks[next_index].text.strip().startswith("**")
+                ):
+                    break
+                if judgement_blocks and not _looks_like_judgement_continuation(
+                    blocks[next_index].text
+                ):
+                    break
+                judgement_blocks.append(blocks[next_index])
+                next_index += 1
+            consumed_through = next_index - 1
+            if (
+                next_index < n
+                and _is_recast_bridge(blocks, next_index)
+            ):
+                judgement_blocks.append(blocks[next_index])
+            if judgement_blocks:
+                first_judgement = judgement_blocks[0]
+                last_judgement = judgement_blocks[-1]
+                judgement_text = text[
+                    first_judgement.start : last_judgement.end
+                ]
+                judgement_id = f"{example_id}:judgement"
+                judgement_stripped = judgement_text.strip()
+                is_editorial = bool(
+                    EDITORIAL_START_RE.match(judgement_stripped)
+                )
+                paragraphs.append(
+                    ParagraphRecord(
+                        source_id=judgement_id,
+                        chapter_id=chapter_id,
+                        seq=-1,
+                        content_type=ContentType.EXAMPLE_JUDGEMENT,
+                        layer=Layer.EXAMPLE,
+                        section_title=current_section,
+                        text=judgement_text,
+                        is_editorial=is_editorial or current_editorial_mode,
+                        attributions=_detect_attributions(judgement_text),
+                        rule_tags=_detect_rule_tags(judgement_text),
+                        topic_tags=_detect_topic_tags(judgement_text),
+                        category_tags=list(category_tags),
+                        example_id=example_id,
+                        source_path=source_path,
+                        source_sha256=sha256,
+                        char_start=first_judgement.start,
+                        char_end=last_judgement.end,
                     )
-                    i += 1  # consume the judgement block too
+                )
+                i = consumed_through
             if judgement_id is None:
                 warnings.append(
                     ParseWarning(

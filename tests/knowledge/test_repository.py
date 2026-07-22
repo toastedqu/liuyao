@@ -6,6 +6,7 @@ from __future__ import annotations
 import pytest
 
 from app.knowledge.models import ContentType, Layer
+from app.rules.registry import RULES
 
 
 def test_list_chapters_returns_all_141_in_order(knowledge_repo):
@@ -37,6 +38,16 @@ def test_get_paragraph_by_stable_id(knowledge_repo):
 
 def test_get_paragraph_unknown_returns_none(knowledge_repo):
     assert knowledge_repo.get_paragraph("008_用神章:p9999") is None
+
+
+def test_every_registered_rule_source_exists(knowledge_repo):
+    missing = [
+        (rule.id, source_id)
+        for rule in RULES
+        for source_id in rule.source_ids
+        if knowledge_repo.get_paragraph(source_id) is None
+    ]
+    assert missing == []
 
 
 def test_paragraphs_by_chapter_are_ordered_by_seq(knowledge_repo):

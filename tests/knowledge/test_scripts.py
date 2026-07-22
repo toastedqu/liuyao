@@ -46,7 +46,7 @@ def test_extract_examples_cli_writes_all_examples(build_workdir, source_dir):
     exit_code = extract_main(["--source", str(source_dir), "--out", str(out_path)])
     assert exit_code == 0
     data = json.loads(out_path.read_text(encoding="utf-8"))
-    assert len(data) == 321
+    assert len(data) == 306
     sample = next(e for e in data if e["example_id"] == "076_求财章:example0003")
     assert sample["judgement"].startswith("断曰：兄爻持世")
     assert sample["category_tags"] == ["求财"]

@@ -11,6 +11,51 @@ const lineValues = [
   [8, "少阴 8（静）"],
   [9, "老阳 9（动，变阴）"],
 ];
+const usefulGodOptions = [
+  ["", "请选择用神"],
+  ["世爻", "世爻（问自身或以自己为主）"],
+  ["应爻", "应爻（问对方或外人）"],
+  ["父母", "父母（父母、长辈、文书、宅舍等）"],
+  ["兄弟", "兄弟（兄弟姐妹、同辈等）"],
+  ["官鬼", "官鬼（丈夫、功名、官府等）"],
+  ["妻财", "妻财（妻子、财物等）"],
+  ["子孙", "子孙（子女、晚辈、医药等）"],
+];
+
+function ensureUsefulGodSelector() {
+  const existing = document.querySelector("#useful-god");
+  if (existing) return existing;
+
+  const question = document.querySelector("#question");
+  if (!question) {
+    throw new Error("页面加载不完整，请刷新后重试。");
+  }
+
+  const label = document.createElement("label");
+  label.htmlFor = "useful-god";
+  label.textContent = "用神";
+
+  const select = document.createElement("select");
+  select.id = "useful-god";
+  select.name = "useful_god";
+  select.required = true;
+  usefulGodOptions.forEach(([value, text], index) => {
+    const option = document.createElement("option");
+    option.value = value;
+    option.textContent = text;
+    if (index === 0) {
+      option.disabled = true;
+      option.selected = true;
+    }
+    select.append(option);
+  });
+
+  const help = document.createElement("small");
+  help.textContent =
+    "只选择用神类别；具体用神爻位由系统依据《增删卜易》确定。婚恋通常男问女取妻财，女问男取官鬼。";
+  question.after(label, select, help);
+  return select;
+}
 
 function buildLines() {
   lineNames.forEach((name, index) => {
@@ -56,6 +101,7 @@ function setDefaultDate() {
 function requestPayload() {
   return {
     question: document.querySelector("#question").value.trim(),
+    useful_god: ensureUsefulGodSelector().value,
     calendar: {
       year: Number(document.querySelector("#year").value),
       month: Number(document.querySelector("#month").value),
@@ -63,9 +109,13 @@ function requestPayload() {
       hour: Number(document.querySelector("#hour").value),
       timezone: "Asia/Shanghai",
     },
-    lines: lineNames.map((_, index) =>
-      Number(document.querySelector(`input[name='line-${index}']:checked`).value)
-    ),
+    lines: lineNames.map((name, index) => {
+      const selected = document.querySelector(
+        `input[name='line-${index}']:checked`
+      );
+      if (!selected) throw new Error(`请选择${name}。`);
+      return Number(selected.value);
+    }),
   };
 }
 
@@ -79,10 +129,15 @@ function messageFromError(payload, status) {
     return payload.detail;
   }
   if (payload?.detail?.message) {
-    const candidates = Array.isArray(payload.detail.candidates)
-      ? ` 可选类型：${payload.detail.candidates.join("、")}。`
+    const rationale = Array.isArray(payload.detail.rationale)
+      ? `\n依据：${payload.detail.rationale.join("；")}`
       : "";
-    return `${payload.detail.message}${candidates}`;
+    const issues = Array.isArray(payload.detail.issues)
+      ? `\n校验问题：${payload.detail.issues
+          .map((item) => item.message || item.code)
+          .join("；")}`
+      : "";
+    return `${payload.detail.message}${rationale}${issues}`;
   }
   return `请求失败（HTTP ${status}）`;
 }
@@ -143,6 +198,7 @@ function renderInputSummary(payload) {
   appendDefinitions(result, [
     ["所占之事", summary.question],
     ["模型判定占类", summary.category],
+    ["模型判定问占视角", summary.perspective],
     ["公历时间", summary.calendar],
     ["时区", summary.timezone],
     ["爻序", summary.line_order],
@@ -246,9 +302,20 @@ function renderUsefulGod(payload) {
   appendDefinitions(result, [
     ["状态", useful.status],
     ["占问对象", useful.target],
-    ["判定方式", useful.selection_mode === "world" ? "世爻" : "六亲"],
+    [
+      "判定方式",
+      { world: "世爻", response: "应爻", relative: "六亲" }[
+        useful.selection_mode
+      ] || useful.selection_mode,
+    ],
     ["采用六亲", useful.useful_relative],
     ["采用爻位", useful.selected_line ? `第${useful.selected_line}爻` : null],
+    [
+      "全部候选",
+      useful.candidates?.map((candidate) =>
+        `第${candidate.line}爻 ${candidate.relative} ${candidate.branch}${candidate.element}`
+      ),
+    ],
     ["用神五行", useful.useful_element],
     ["元神", useful.yuan_element],
     ["忌神", useful.taboo_element],
@@ -270,6 +337,32 @@ function renderFacts(payload) {
       ["规则出处", (fact) => fact.rule_source],
     ],
     payload.facts
+  );
+}
+
+function renderOutcomeEvidence(payload) {
+  appendHeading(result, "7. 吉凶裁决证据");
+  const analysis = payload.outcome_analysis;
+  if (!analysis) {
+    result.append(document.createTextNode("尚未判定用神，不生成吉凶裁决证据。"));
+    return;
+  }
+  appendDefinitions(result, [
+    ["质量控制结论", analysis.guardrail],
+    ["限制", analysis.limitations],
+    ["说明", "卦例不计入吉凶权重；仅用神及有效元忌相关事实可进入裁决。"],
+  ]);
+  appendTable(
+    result,
+    [
+      ["证据 ID", (item) => item.id],
+      ["方向", (item) => item.direction],
+      ["层级", (item) => item.weight],
+      ["说明", (item) => item.description],
+      ["事实", (item) => item.fact_ids],
+      ["原文", (item) => item.source_ids],
+    ],
+    analysis.evidence
   );
 }
 
@@ -303,7 +396,7 @@ function appendJudgements(container, judgements) {
 }
 
 function renderInterpretation(payload) {
-  appendHeading(result, "7. 断卦结论");
+  appendHeading(result, "8. 断卦结论");
   const interpretation = payload.interpretation;
   const lead = document.createElement("p");
   lead.textContent = `${interpretation.overall.outlook}：${interpretation.overall.summary}`;
@@ -363,7 +456,7 @@ function appendCaseSource(container, label, source) {
 }
 
 function renderCaseReasoning(payload) {
-  appendHeading(result, "8. 卦例类比");
+  appendHeading(result, "9. 卦例参考（不参与吉凶权重）");
   const comparisons = new Map(
     (payload.interpretation?.case_analysis?.comparisons || [])
       .map((comparison) => [comparison.example_id, comparison])
@@ -380,9 +473,9 @@ function renderCaseReasoning(payload) {
     heading.textContent = `${evidence.example_id} · ${evidence.chapter_title}`;
     article.append(heading);
     appendDefinitions(article, [
-      ["预筛匹配分", evidence.match_score],
-      ["匹配原因", evidence.match_reasons],
-      ["模型是否采用", comparisons.has(evidence.example_id) ? "是" : "否，仅作候选"],
+      ["参考检索分（非吉凶分）", evidence.match_score],
+      ["检索原因", evidence.match_reasons],
+      ["是否完成参考比照", comparisons.has(evidence.example_id) ? "是" : "否"],
     ]);
 
     const comparison = comparisons.get(evidence.example_id);
@@ -390,7 +483,7 @@ function renderCaseReasoning(payload) {
       [
         ["相似点", comparison.similarities],
         ["关键差异", comparison.differences],
-        ["如何迁移到本问", comparison.application],
+        ["方法参考边界", comparison.application],
       ].forEach(([label, judgement]) => {
         const subheading = document.createElement("h5");
         subheading.textContent = label;
@@ -407,7 +500,7 @@ function renderCaseReasoning(payload) {
 }
 
 function renderTiming(payload) {
-  appendHeading(result, "9. 应期候选");
+  appendHeading(result, "10. 应期候选");
   appendTable(
     result,
     [
@@ -433,7 +526,7 @@ function renderTiming(payload) {
 }
 
 function renderSources(payload) {
-  appendHeading(result, "10. 原文依据");
+  appendHeading(result, "11. 原文依据");
   payload.sources.forEach((source) => {
     const details = document.createElement("details");
     const summary = document.createElement("summary");
@@ -458,6 +551,7 @@ function renderResponse(payload) {
   renderLines(payload);
   renderUsefulGod(payload);
   renderFacts(payload);
+  renderOutcomeEvidence(payload);
   if (payload.interpretation) {
     renderInterpretation(payload);
     renderCaseReasoning(payload);
@@ -482,7 +576,7 @@ form.addEventListener("submit", async (event) => {
   errorBox.hidden = true;
   result.hidden = true;
   submitButton.disabled = true;
-  submitButton.textContent = "正在判定用神并生成断语（需要两次模型调用，通常需数分钟）…";
+  submitButton.textContent = "正在判定占类并生成断语（需要两次模型调用，通常需数分钟）…";
   try {
     const response = await fetch("/api/v1/divinations", {
       method: "POST",
@@ -500,9 +594,10 @@ form.addEventListener("submit", async (event) => {
     errorBox.hidden = false;
   } finally {
     submitButton.disabled = false;
-    submitButton.textContent = "判定用神、排盘并断卦";
+    submitButton.textContent = "排盘并断卦";
   }
 });
 
+ensureUsefulGodSelector();
 buildLines();
 setDefaultDate();

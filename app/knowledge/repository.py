@@ -10,7 +10,7 @@ Schema overview
                 citation is not a paraphrase (§8.2, §12 item 3).
 ``examples``    one row per 卦例, linking its question/chart/judgement
                 paragraph ids and pre-computed feature tags used for
-                similarity scoring (§8.3 item 4).
+                reference retrieval (§8.3 item 4), never as an outcome score.
 ``paragraphs_fts``  an FTS5 external-content index over ``paragraphs.text``
                 using the ``trigram`` tokenizer (works for CJK text without
                 a word-segmentation dependency), used only as the

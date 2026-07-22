@@ -6,6 +6,7 @@ from app.rules.models import (
     RuleFact,
     UsefulGodSelection,
 )
+from app.rules.registry import get_rule, make_fact
 
 
 def god_role_facts(
@@ -15,23 +16,36 @@ def god_role_facts(
     facts: list[RuleFact] = []
     if useful.useful_element is None:
         return facts
-
-    selected_candidate = (
-        useful.candidates[0]
-        if useful.status == "selected" and useful.candidates
-        else None
+    mapping_sources = get_rule("ZSBY-008-USEFUL-MAPPING").source_ids
+    mapping_source = next(
+        (
+            source_id
+            for source_id in useful.source_ids
+            if source_id in mapping_sources
+        ),
+        None,
     )
-    if selected_candidate is None and useful.status == "selected":
-        source = next(
+    if mapping_source is None:
+        raise ValueError("用神选择缺少已注册的用神映射出处")
+
+    candidates_by_line = {
+        candidate.line: candidate
+        for candidate in useful.candidates
+        if candidate.line is not None
+    }
+    if not candidates_by_line and useful.status == "selected":
+        calendar_source = next(
             (
                 source_id
                 for source_id in useful.source_ids
                 if source_id.startswith("035_")
+                and source_id in mapping_sources
             ),
-            useful.source_ids[0],
+            mapping_source,
         )
         facts.append(
-            RuleFact(
+            make_fact(
+                "ZSBY-008-USEFUL-MAPPING",
                 id="fact-useful-god-calendar",
                 type="USEFUL_GOD",
                 value=True,
@@ -42,34 +56,38 @@ def god_role_facts(
                     else None,
                     "element": useful.useful_element.value,
                 },
-                rule_source=source,
+                source_id=calendar_source,
             )
         )
 
     for line in context.lines:
-        if selected_candidate and line.position == selected_candidate.line:
+        candidate = candidates_by_line.get(line.position)
+        if candidate is not None:
             facts.append(
-                RuleFact(
+                make_fact(
+                    "ZSBY-008-USEFUL-MAPPING",
                     id=f"fact-useful-god-l{line.position}",
                     type="USEFUL_GOD",
                     line=line.position,
                     value=True,
                     evidence={
-                        "role": selected_candidate.role,
-                        "relative": selected_candidate.relative.value
-                        if selected_candidate.relative
+                        "role": candidate.role,
+                        "relative": candidate.relative.value
+                        if candidate.relative
                         else None,
-                        "branch": selected_candidate.branch,
-                        "element": selected_candidate.element.value
-                        if selected_candidate.element
+                        "branch": candidate.branch,
+                        "element": candidate.element.value
+                        if candidate.element
                         else None,
+                        "selected": line.position == useful.selected_line,
                     },
-                    rule_source=useful.source_ids[0],
+                    source_id=mapping_source,
                 )
             )
         if useful.yuan_element is line.element:
             facts.append(
-                RuleFact(
+                make_fact(
+                    "ZSBY-009-GOD-ROLES",
                     id=f"fact-yuan-god-l{line.position}",
                     type="YUAN_GOD",
                     line=line.position,
@@ -79,12 +97,13 @@ def god_role_facts(
                         "useful_element": useful.useful_element.value,
                         "moving": line.is_moving,
                     },
-                    rule_source="009_用神、元神、忌神、仇神章:p0001",
+                    source_id="009_用神、元神、忌神、仇神章:p0001",
                 )
             )
         if useful.taboo_element is line.element:
             facts.append(
-                RuleFact(
+                make_fact(
+                    "ZSBY-009-GOD-ROLES",
                     id=f"fact-taboo-god-l{line.position}",
                     type="TABOO_GOD",
                     line=line.position,
@@ -94,12 +113,13 @@ def god_role_facts(
                         "useful_element": useful.useful_element.value,
                         "moving": line.is_moving,
                     },
-                    rule_source="009_用神、元神、忌神、仇神章:p0001",
+                    source_id="009_用神、元神、忌神、仇神章:p0001",
                 )
             )
         if useful.enemy_element is line.element:
             facts.append(
-                RuleFact(
+                make_fact(
+                    "ZSBY-009-GOD-ROLES",
                     id=f"fact-enemy-god-l{line.position}",
                     type="ENEMY_GOD",
                     line=line.position,
@@ -114,14 +134,15 @@ def god_role_facts(
                         else None,
                         "moving": line.is_moving,
                     },
-                    rule_source="009_用神、元神、忌神、仇神章:p0001",
+                    source_id="009_用神、元神、忌神、仇神章:p0001",
                 )
             )
 
         if line.is_moving and line.position != useful.selected_line:
             if generates(line.element, useful.useful_element):
                 facts.append(
-                    RuleFact(
+                    make_fact(
+                        "ZSBY-014-LINE-ELEMENT-RELATION",
                         id=f"fact-moving-generates-useful-l{line.position}",
                         type="MOVING_GENERATES_USEFUL",
                         line=line.position,
@@ -133,12 +154,13 @@ def god_role_facts(
                             "moving_element": line.element.value,
                             "useful_element": useful.useful_element.value,
                         },
-                        rule_source="014_动静生克章:p0001",
+                        source_id="014_动静生克章:p0004",
                     )
                 )
             elif overcomes(line.element, useful.useful_element):
                 facts.append(
-                    RuleFact(
+                    make_fact(
+                        "ZSBY-014-LINE-ELEMENT-RELATION",
                         id=f"fact-moving-overcomes-useful-l{line.position}",
                         type="MOVING_OVERCOMES_USEFUL",
                         line=line.position,
@@ -150,7 +172,7 @@ def god_role_facts(
                             "moving_element": line.element.value,
                             "useful_element": useful.useful_element.value,
                         },
-                        rule_source="014_动静生克章:p0001",
+                        source_id="014_动静生克章:p0004",
                     )
                 )
 
@@ -168,7 +190,8 @@ def god_role_facts(
         else:
             relationship = "飞伏比和"
         facts.append(
-            RuleFact(
+            make_fact(
+                "ZSBY-035-HIDDEN-RELATION",
                 id=f"fact-flying-hidden-relation-l{line.position}",
                 type="FLYING_HIDDEN_RELATION",
                 line=line.position,
@@ -180,13 +203,14 @@ def god_role_facts(
                     "hidden_element": spirit.element.value,
                     "hidden_relative": spirit.relative.value,
                 },
-                rule_source="035_飞伏神章:p0001",
+                source_id="035_飞伏神章:p0004",
             )
         )
 
     if len(useful.candidates) > 1:
         facts.append(
-            RuleFact(
+            make_fact(
+                "ZSBY-039-DOUBLE-PRESENT",
                 id="fact-useful-god-multiple",
                 type="USEFUL_GOD_MULTIPLE",
                 related_lines=tuple(
@@ -199,9 +223,13 @@ def god_role_facts(
                     "candidate_lines": [
                         candidate.line for candidate in useful.candidates
                     ],
-                    "scores": [candidate.score for candidate in useful.candidates],
+                    "candidate_reasons": [
+                        list(candidate.reasons) for candidate in useful.candidates
+                    ],
+                    "selected_line": useful.selected_line,
+                    "status": useful.status,
                 },
-                rule_source="039_两现章:p0001",
+                source_id="039_两现章:p0002",
             )
         )
     return facts

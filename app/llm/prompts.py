@@ -11,8 +11,13 @@ from __future__ import annotations
 import json
 
 from app.llm.base import Message
-from app.llm.context import DivinationRequestContext, ExampleContext, SourceContext
-from app.llm.schemas import DivinationConclusion, UsefulGodDecision
+from app.llm.context import (
+    DecisionEvidenceContext,
+    DivinationRequestContext,
+    ExampleContext,
+    SourceContext,
+)
+from app.llm.schemas import DivinationConclusion, QuestionCategory
 
 #: Representative terms from other divination schools, modern idioms, or
 #: pseudo-scientific framings that must never appear in a断卦结果. This is a
@@ -40,24 +45,22 @@ FORBIDDEN_TERMS: frozenset[str] = frozenset(
 )
 
 
-USEFUL_GOD_SYSTEM_PROMPT = """\
-你负责依据用户写下的“所占之事”和提供的《增删卜易》原文，判定本次占问的占类与用神。你必须严格遵守以下规则：
+QUESTION_CATEGORY_SYSTEM_PROMPT = """\
+你只负责提取用户问题的占类与问占视角，不负责排盘、选择或修改用神，也不解释任何六爻规则。你必须严格遵守以下规则：
 
-1. 只根据用户实际写出的内容识别占问者、被问对象和所问事项，不得假定页面另有自占、代占、性别或关系字段。
-2. 必须选择且只选择一种用神方式：问占者本人整体事项时可取世爻（mode=world）；问题明确指向人物、财物、文书、功名、医药、天气等对象时，按原文选择一个六亲（mode=relative）。
-3. mode=world 时 useful_relative 必须为 null；mode=relative 时 useful_relative 必须是父母、兄弟、官鬼、妻财、子孙之一。
-4. target 必须简短复述用户原话中的实际占问对象；不得把未写明的关系、身份或性别添加进 target 或 rationale。
-5. citations 至少包含一条支撑所选用神的原文；source_id 只能取自用户消息提供的段落，quote 必须逐字摘录，不得转述、拼接、增删或编造。
-6. 不得把编辑性按语当作原文依据，不得使用提供材料以外的六爻口诀或其他术数。
-7. 只能输出符合给定 JSON Schema 的对象，不得输出 Schema 之外的解释或 Markdown。
+1. category 必须从给定占类中选择一个最贴近用户核心问题的值，不得拒绝选择或输出歧义状态。
+2. 恋爱、择偶、婚恋关系及夫妻关系归入“婚姻”；工作职位与考试功名归入“功名”；收入、交易与财物归入“求财”。
+3. perspective 必须选择“自占”或“代占”。问自己的财运、工作、婚恋、疾病、出行等均为“自占”；明确替父母、子女、伴侣、亲友或其他人问其吉凶为“代占”。不得把“我问与某人的关系”误作替对方代占。
+4. 用户已经另行选择用神；不得根据问题改选世爻、应爻或任何六亲。
+5. 只能输出符合给定 JSON Schema 的对象，不得输出 Schema 之外的解释或 Markdown。
 """
 
 
 SYSTEM_PROMPT = """\
 你是依据《增删卜易》原文断卦的助手。你必须严格遵守以下规则：
 
-1. 不得重新排盘，也不得修改用户消息中给出的任何排盘事实、前置模型判定并由代码定位的用神或应期候选，只能引用它们。
-2. “规则与理论原文”用于确定判断规则；“候选卦例”用于展示原书如何把规则落实到具体所问事项。不得使用《增删卜易》原文之外的规则，但必须在本卦事实支撑下比较卦例并作有边界的类比；类比本身不是新增规则。
+1. 不得重新排盘，也不得修改用户选择并由代码定位的用神、任何排盘事实或应期候选，只能引用它们。
+2. “本卦裁决证据”是唯一允许决定总体吉凶方向的事实集合；“规则与理论原文”只解释这些事实如何权衡；“候选卦例”仅供完成主判断后的方法参考，既不是吉凶票数，也不得改变已经依据本卦裁决证据形成的方向。不得使用《增删卜易》原文之外的规则。
 3. 不得引入其他占卜流派、神煞或现代口诀，包括但不限于：{forbidden_terms}。
 4. 不得编造不存在的章节、段落引用或引文内容；引用原文必须逐字摘录用户消息中提供的原文，不得转述、概括、增删或意译。
 5. 不得把编辑性按语（如「乾按」「提要」）伪装成野鹤或觉子的原文断语。
@@ -66,13 +69,15 @@ SYSTEM_PROMPT = """\
 8. 只能输出符合给定 JSON Schema 的结构化结果，不得输出任何 Schema 之外的文字、解释或 Markdown。
 9. useful_god.useful_god 必须保留用户消息中的用神方式、六亲和已定位爻位；不得在断卦阶段重新选择用神或指定代码未选定的爻位。
 10. 总结、格局名称和风险描述不得夹带具体爻位属性或应期；这些内容必须放在可附带事实、引文和 line_assertions 的 judgement 中。
-11. question_application 必须把旺衰、生克、空破、动变等抽象结论翻译成用户所问之事的具体含义；不得只复述术语。synthesis 必须直接回答用户的问题，并引用本卦 fact_id。
-12. 有候选卦例时，case_analysis 必须比较系统提供的一个最相关实例，分别说明相似点、关键差异和可迁移结论。similarities、differences、application 每项都必须同时引用该卦例原文和本卦 fact_id，其中 application 必须引用该例的“原断语与应验”；同卦、同占类不等于结论必然相同。
-13. 证据明显偏向一方时必须在“吉、凶、平”中给出方向，不得因为没有与现代问题逐字相同的原文或没有完全相同的卦例就选择“不确定”。只有吉凶事实直接冲突且无法依原文与实例分出主次时才可选择“不确定”，并在 favorable、adverse 和 synthesis 中写明冲突。
+11. question_application 必须把旺衰、生克、空破、动变等抽象结论翻译成用户所问之事的具体含义；不得只复述术语。favorable 只能把标为“有利”的裁决证据解释为本问的有利因素，adverse 只能把标为“不利”的裁决证据解释为不利因素；synthesis 必须直接回答用户问题并引用裁决证据所列 fact_id，不能只引用普通排盘事实。
+12. 有候选卦例时，case_analysis 必须在主判断完成后作一次参考比照，role 固定为 reference_only。similarities、differences、application 每项须连接原例和本卦事实，但 application 只能说明原例的判断方法在本卦何处适用、何处不适用，不得用原例结果支持或推翻 overall。
+13. overall.outlook 必须严格服从本轮给出的“允许总体结论”：仅有利主证只能为“吉”，仅不利主证只能为“凶”，正反证据并见只能为“吉中有阻”或“凶中有救”，暂不裁决只能为“需再占”。“吉中有阻”须以有利为主且综合两侧，“凶中有救”须以不利为主且综合两侧。不得输出“平”或“不确定”，也不得因为没有完全相同的卦例改变结论集合。
 14. 输出应简明：每个分析部分只保留一至两条最关键判断，每条只引用支撑该句所必需的 fact_id 和引文，不要穷举所有事实。
 15. line_assertions 只能引用“排盘事实标签”中明确显示了“属性=”的 fact_id，且属性、爻位和布尔值必须完全一致；其他一般事实只能放在 fact_ids 中。
 
-如果某项细节证据不足，应把该细节列为限制；不能因此自动把整个问题判为“不确定”，也不能用自己的六爻知识弥补空白。
+16. 不得把普通的主卦名、变卦名、六冲、六合、游魂、归魂，或元神/忌神“出现”本身当作吉凶证据；只有“本卦裁决证据”明确列出的有利、不利或条件性作用才可进入综合。空破、休囚、动爻也不能脱离有根无根、有力无力、元忌同动及生克多少机械贴标签。
+
+如果某项细节证据不足，应把该细节列为限制；不能用自己的六爻知识弥补空白。质量控制为“暂不裁决”时只能输出“需再占”，并明确裁决层为何保留，不得伪造单向主证。
 """
 
 
@@ -84,12 +89,17 @@ def build_system_prompt(*, forbidden_terms: frozenset[str] | None = None) -> str
 
 def _render_fact(fact) -> str:
     parts = [f"- {fact.id} [{fact.type}]"]
+    parts.append(f"层级={fact.layer}")
+    if fact.rule_id is not None:
+        parts.append(f"规则={fact.rule_id}")
     if fact.line is not None:
         parts.append(f"第{fact.line}爻")
     if fact.property is not None:
+        # fact.value is always literally True whenever property is set
+        # (see DivinationService._chart_fact_context/_rule_fact_context), so
+        # rendering it separately would just repeat "属性=" with no new
+        # information.
         parts.append(f"属性={fact.property.value}")
-    if fact.value is not None:
-        parts.append(f"值={fact.value}")
     parts.append(fact.description)
     return " ".join(parts)
 
@@ -103,14 +113,13 @@ def _render_timing_candidate(candidate) -> str:
 
 
 def _render_source(source) -> str:
-    return f"- {source.source_id}（{source.chapter}）：{source.text}"
+    # source_id already encodes the chapter (e.g. "008_用神章:p0001"), so a
+    # separate "（章节标题）" suffix would just repeat it verbatim.
+    return f"- {source.source_id}：{source.text}"
 
 
 def _render_example(example: ExampleContext) -> str:
-    reasons = "；".join(example.match_reasons) or "同占类候选"
-    parts = [
-        f"### {example.example_id}（{example.chapter}；匹配分={example.match_score:g}；{reasons}）"
-    ]
+    parts = [f"### {example.example_id}（仅作方法参考）"]
     for label, source in (
         ("原占问", example.question),
         ("原卦盘", example.chart),
@@ -121,35 +130,39 @@ def _render_example(example: ExampleContext) -> str:
     return "\n".join(parts)
 
 
-def build_useful_god_selection_user_message(
+def _render_decision_evidence(evidence: DecisionEvidenceContext) -> str:
+    facts = "、".join(evidence.fact_ids)
+    sources = "、".join(evidence.source_ids) or "见事实自身出处"
+    return (
+        f"- {evidence.evidence_id} [{evidence.direction}/{evidence.weight}] "
+        f"{evidence.description}；可引用事实={facts}；规则出处={sources}"
+    )
+
+
+def build_question_category_user_message(
     question: str,
-    sources: list[SourceContext],
-    response_schema: type[UsefulGodDecision] = UsefulGodDecision,
+    response_schema: type[QuestionCategory] = QuestionCategory,
 ) -> str:
-    """Build the first-stage request that classifies the question's useful god."""
-    sources_block = "\n".join(_render_source(source) for source in sources)
+    """Build the first-stage request that classifies only the question category."""
     return f"""\
 所占之事：{question}
 
 可选占类：天时、身命、求财、功名、婚姻、胎产、出行、行人、诉讼、疾病、家宅、茔葬、六亲、学业、其他。
-
-可引用的《增删卜易》用神原文：
-{sources_block}
+问占视角：自占、代占。
 
 请通过 Provider 已提供的 {response_schema.__name__} 结构化输出格式返回结果，
 不要输出任何额外文字。
 """
 
 
-def build_useful_god_selection_messages(
+def build_question_category_messages(
     question: str,
-    sources: list[SourceContext],
 ) -> list[Message]:
     return [
-        Message(role="system", content=USEFUL_GOD_SYSTEM_PROMPT),
+        Message(role="system", content=QUESTION_CATEGORY_SYSTEM_PROMPT),
         Message(
             role="user",
-            content=build_useful_god_selection_user_message(question, sources),
+            content=build_question_category_user_message(question),
         ),
     ]
 
@@ -157,6 +170,14 @@ def build_useful_god_selection_messages(
 def build_user_message(context: DivinationRequestContext, response_schema: type[DivinationConclusion]) -> str:
     """Serialize the full request context plus the required output schema."""
     facts_block = "\n".join(_render_fact(f) for f in context.facts) or "（无）"
+    decision_block = (
+        "\n".join(
+            _render_decision_evidence(evidence)
+            for evidence in context.decision_evidence
+        )
+        or "（裁决层没有足以定向的证据）"
+    )
+    decision_limitations = "；".join(context.decision_limitations) or "无"
     timing_block = "\n".join(_render_timing_candidate(c) for c in context.timing_candidates) or "（无可用候选，须说明证据不足）"
     example_source_ids = {
         source.source_id
@@ -169,10 +190,17 @@ def build_user_message(context: DivinationRequestContext, response_schema: type[
     ]
     sources_block = "\n".join(_render_source(s) for s in theory_sources) or "（无检索结果）"
     examples_block = "\n\n".join(_render_example(e) for e in context.examples) or "（无匹配卦例）"
+    allowed_outlooks = {
+        "仅有利主证": "吉",
+        "仅不利主证": "凶",
+        "正反证据并见": "吉中有阻、凶中有救",
+        "暂不裁决": "需再占",
+    }.get(context.decision_guardrail, "需再占")
 
     return f"""\
 所占之事：{context.question}
 模型判定占类：{context.category}
+模型判定问占视角：{context.perspective}
 用神：{context.useful_god}
 
 结构化排盘（唯一可信的卦象事实来源，不得更改）：
@@ -181,16 +209,22 @@ def build_user_message(context: DivinationRequestContext, response_schema: type[
 排盘事实标签：
 {facts_block}
 
+本卦裁决证据（唯一可决定总体方向；不得把候选卦例计入）：
+质量控制={context.decision_guardrail}
+允许总体结论={allowed_outlooks}
+限制={decision_limitations}
+{decision_block}
+
 应期候选（只能从中选择，不得新增）：
 {timing_block}
 
 规则与理论原文（用于确定规则，引用必须逐字摘录自此处）：
 {sources_block}
 
-候选卦例（代码只做预筛；须比较相似点和差异后才能迁移原断）：
+候选卦例（仅作主判断完成后的方法参考；不提供匹配分，不参与吉凶权重）：
 {examples_block}
 
-请先在 question_application 中把卦象事实映射到“所占之事”，再在 case_analysis 中用所提供的一个卦例检验这个映射，最后给出有方向的 overall 结论。
+请先完全不依赖卦例结果，只按“本卦裁决证据”和规则原文完成 overall 与 question_application；再以 role=reference_only 完成 case_analysis，说明参考边界，不得回改主判断方向。
 
 请通过 Provider 已提供的 {response_schema.__name__} 结构化输出格式返回结果，
 不要输出任何额外文字。

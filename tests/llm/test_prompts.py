@@ -12,15 +12,15 @@ from app.llm.base import Message
 from app.llm.context import ExampleContext, SourceContext
 from app.llm.prompts import (
     FORBIDDEN_TERMS,
-    USEFUL_GOD_SYSTEM_PROMPT,
+    QUESTION_CATEGORY_SYSTEM_PROMPT,
     build_correction_messages,
     build_messages,
+    build_question_category_messages,
+    build_question_category_user_message,
     build_system_prompt,
-    build_useful_god_selection_messages,
-    build_useful_god_selection_user_message,
     build_user_message,
 )
-from app.llm.schemas import DivinationConclusion, UsefulGodDecision
+from app.llm.schemas import DivinationConclusion, QuestionCategory
 
 
 def test_system_prompt_lists_all_forbidden_actions() -> None:
@@ -33,8 +33,10 @@ def test_system_prompt_lists_all_forbidden_actions() -> None:
     assert "只能从用户消息给出的应期候选中选择" in prompt
     assert "line_assertions" in prompt
     assert "候选卦例" in prompt
-    assert "不得因为没有与现代问题逐字相同" in prompt
+    assert "不得因为没有完全相同的卦例" in prompt
     assert "明确显示了“属性=”的 fact_id" in prompt
+    assert "唯一允许决定总体吉凶方向" in prompt
+    assert "卦例结果影响而判凶" not in prompt
 
 
 def test_system_prompt_includes_forbidden_terms() -> None:
@@ -55,11 +57,13 @@ def test_build_user_message_includes_all_context_sections(sample_context) -> Non
     assert sample_context.category in text
     assert "妻财" in text
     assert "fact-0001" in text
+    assert "本卦裁决证据" in text
+    assert "质量控制=仅有利主证" in text
+    assert "test-favorable" in text
     assert "timing-0001" in text
     assert "008_用神章:p0001" in text
     assert "用神旺相" in text  # source text is inlined verbatim
-    assert "自占" not in text
-    assert "代占" not in text
+    assert "模型判定问占视角：自占" in text
 
 
 def test_build_user_message_groups_worked_examples_separately(sample_context) -> None:
@@ -94,7 +98,9 @@ def test_build_user_message_groups_worked_examples_separately(sample_context) ->
     assert "候选卦例" in text
     assert "076_求财章:example0001" in text
     assert "原断语与应验" in text
-    assert "同占类：求财" in text
+    assert "仅作方法参考" in text
+    assert "匹配分=" not in text
+    assert "同占类：求财" not in text
     theory_block = text.split("候选卦例", maxsplit=1)[0]
     assert "076_求财章:example0001:judgement" not in theory_block
 
@@ -106,36 +112,34 @@ def test_build_user_message_embeds_json_schema(sample_context) -> None:
     assert schema_json not in text
 
 
-def test_useful_god_selection_prompt_uses_question_and_source_only(
+def test_question_category_prompt_uses_question_without_divination_rules(
     sample_context,
 ) -> None:
-    text = build_useful_god_selection_user_message(
-        sample_context.question,
-        sample_context.sources,
-    )
+    text = build_question_category_user_message(sample_context.question)
 
     assert sample_context.question in text
-    assert "008_用神章:p0001" in text
+    assert "008_用神章:p0001" not in text
+    assert "父母爻" not in text
     assert "model-classified" not in text
     assert "chart_summary" not in text
-    assert "Provider 已提供的 UsefulGodDecision" in text
+    assert "Provider 已提供的 QuestionCategory" in text
+    assert "问占视角：自占、代占" in text
     assert json.dumps(
-        UsefulGodDecision.model_json_schema(),
+        QuestionCategory.model_json_schema(),
         ensure_ascii=False,
     ) not in text
 
 
-def test_useful_god_selection_messages_use_dedicated_system_prompt(
+def test_question_category_messages_use_dedicated_system_prompt(
     sample_context,
 ) -> None:
-    messages = build_useful_god_selection_messages(
-        sample_context.question,
-        sample_context.sources,
-    )
+    messages = build_question_category_messages(sample_context.question)
 
     assert [message.role for message in messages] == ["system", "user"]
-    assert messages[0].content == USEFUL_GOD_SYSTEM_PROMPT
-    assert "不得假定页面另有自占、代占" in messages[0].content
+    assert messages[0].content == QUESTION_CATEGORY_SYSTEM_PROMPT
+    assert "不得拒绝选择或输出歧义状态" in messages[0].content
+    assert "用户已经另行选择用神" in messages[0].content
+    assert "明确替父母、子女、伴侣" in messages[0].content
 
 
 def test_build_messages_returns_system_then_user(sample_context) -> None:

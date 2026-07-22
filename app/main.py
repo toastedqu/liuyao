@@ -25,6 +25,14 @@ app.include_router(chart_router)
 app.include_router(divination_router)
 
 
+@app.middleware("http")
+async def prevent_frontend_version_skew(request: Request, call_next):
+    response = await call_next(request)
+    if request.url.path == "/" or request.url.path.startswith("/static/"):
+        response.headers["Cache-Control"] = "no-store"
+    return response
+
+
 @app.exception_handler(CalendarError)
 async def calendar_error_handler(
     _request: Request,

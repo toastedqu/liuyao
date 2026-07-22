@@ -8,6 +8,7 @@ from typing import Any
 from app.api.schemas import (
     CaseEvidenceOutput,
     Category,
+    ChartRequest,
     ChartResponse,
     DivinationRequest,
     DivinationResponse,
@@ -20,13 +21,14 @@ from app.config import Settings
 from app.divination.validator import (
     ValidationResult,
     validate_divination_conclusion,
-    validate_useful_god_decision,
 )
+from app.divination.useful_god import build_useful_god_choice
 from app.knowledge.models import ParagraphRecord
 from app.knowledge.repository import KnowledgeRepository
 from app.knowledge.retrieval import Retriever, ScoredExample
 from app.llm.base import LLMProvider
 from app.llm.context import (
+    DecisionEvidenceContext,
     DivinationRequestContext,
     ExampleContext,
     FactContext,
@@ -37,9 +39,13 @@ from app.llm.factory import get_llm_provider
 from app.llm.prompts import (
     build_correction_messages,
     build_messages,
-    build_useful_god_selection_messages,
+    build_question_category_messages,
 )
-from app.llm.schemas import DivinationConclusion, LineProperty, UsefulGodDecision
+from app.llm.schemas import (
+    DivinationConclusion,
+    LineProperty,
+    QuestionCategory,
+)
 from app.rules import (
     ChangedLineContext,
     LineContext,
@@ -50,9 +56,10 @@ from app.rules import (
 from app.rules.models import (
     Element as RuleElement,
     HiddenSpiritContext,
+    QuestionPerspective,
     Relative as RuleRelative,
     RuleFact,
-    UsefulGodChoice,
+    UsefulGodSelection,
 )
 
 
@@ -61,30 +68,32 @@ CORPUS_CATEGORY = {
     "行人": "出行",
     "学业": "功名",
 }
-USEFUL_GOD_SELECTION_SOURCE_IDS = (
-    "008_用神章:p0001",
-    "008_用神章:p0002",
-    "008_用神章:p0003",
-    "008_用神章:p0006",
-    "008_用神章:p0007",
-    "031_各门类题头总注章:p0010",
-    "041_天时章:p0002",
-    "041_天时章:p0003",
-    "041_天时章:p0005",
-)
 FACT_TO_RULE_TAG: dict[str, str] = {
     "USEFUL_GOD": "USEFUL_GOD",
     "YUAN_GOD": "ORIGIN_GOD",
     "TABOO_GOD": "TABOO_GOD",
     "ENEMY_GOD": "RIVAL_GOD",
     "旬空": "EMPTY_TOMB",
+    "CHANGED_VOID": "EMPTY_TOMB",
+    "HIDDEN_VOID": "EMPTY_TOMB",
+    "VOID_EFFECT": "EMPTY_TOMB",
+    "CHANGED_VOID_EFFECT": "EMPTY_TOMB",
     "MONTH_BREAK": "MONTH_BREAK",
+    "CHANGED_MONTH_BREAK": "MONTH_BREAK",
+    "HIDDEN_MONTH_BREAK": "MONTH_BREAK",
+    "MONTH_BREAK_EFFECT": "MONTH_BREAK",
+    "CHANGED_MONTH_BREAK_EFFECT": "MONTH_BREAK",
     "SEASONAL_STRENGTH": "SEASONAL_STRENGTH",
+    "CHANGED_SEASONAL_STRENGTH": "SEASONAL_STRENGTH",
+    "HIDDEN_SEASONAL_STRENGTH": "SEASONAL_STRENGTH",
     "DARK_MOVEMENT": "HIDDEN_MOTION",
     "MOVING_DAY_CLASH": "MOVING_DISSIPATE",
     "RETURN_GENERATE": "RETURN_GENERATION",
     "RETURN_OVERCOME": "RETURN_CONTROL",
     "THREE_HARMONY": "THREE_COMBINE",
+    "THREE_HARMONY_PENDING": "THREE_COMBINE",
+    "THREE_HARMONY_EFFECT": "THREE_COMBINE",
+    "THREE_HARMONY_WORLD_EFFECT": "THREE_COMBINE",
     "LINE_COMBINE": "SIX_COMBINE",
     "MONTH_COMBINE": "SIX_COMBINE",
     "DAY_COMBINE": "SIX_COMBINE",
@@ -94,14 +103,25 @@ FACT_TO_RULE_TAG: dict[str, str] = {
     "CHANGED_SIX_CLASH": "SIX_CLASH",
     "LINE_PUNISHMENT": "THREE_PUNISH",
     "ADVANCE": "ADVANCING_SPIRIT",
+    "ADVANCE_EFFECT": "ADVANCING_SPIRIT",
     "RETREAT": "RETREATING_SPIRIT",
+    "RETREAT_EFFECT": "RETREATING_SPIRIT",
     "FLYING_HIDDEN_RELATION": "HIDDEN_SPIRIT",
+    "HIDDEN_SPIRIT_EFFECT": "HIDDEN_SPIRIT",
     "REVERSE_CHANT": "REVERSE_ECHO",
     "REPEATED_CHANT": "REPEATED_ECHO",
     "SINGLE_MOVING": "SOLE_MOVING",
     "USEFUL_GOD_MULTIPLE": "DOUBLE_PRESENT",
     "WANDERING_SOUL": "WANDERING_RETURNING_SOUL",
     "RETURNING_SOUL": "WANDERING_RETURNING_SOUL",
+    "LIFE_STAGE": "GRAVE_ABSOLUTE",
+    "CHANGED_LIFE_STAGE": "GRAVE_ABSOLUTE",
+    "HIDDEN_LIFE_STAGE": "GRAVE_ABSOLUTE",
+    "DYNAMIC_LIFE_STAGE": "GRAVE_ABSOLUTE",
+    "LIFE_STAGE_EFFECT": "GRAVE_ABSOLUTE",
+    "CHANGED_LIFE_STAGE_EFFECT": "GRAVE_ABSOLUTE",
+    "DYNAMIC_LIFE_STAGE_EFFECT": "GRAVE_ABSOLUTE",
+    "GHOST_TOMB": "GHOST_TOMB",
 }
 
 
@@ -111,7 +131,10 @@ class KnowledgeBaseUnavailable(RuntimeError):
 
 class UsefulGodResolutionRequired(RuntimeError):
     def __init__(self, rationale: tuple[str, ...]):
-        super().__init__("模型已判定用神，但当前排盘无法定位对应爻位")
+        super().__init__(
+            "所选用神无法在当前卦盘中定位；请核对所选用神类别，"
+            "仍不能确定时应依《增删卜易》再占，不作强断"
+        )
         self.rationale = rationale
 
 
@@ -124,12 +147,12 @@ class DivinationValidationError(RuntimeError):
 
 @dataclass(frozen=True)
 class DeterministicResult:
-    request: DivinationRequest
+    request: ChartRequest
     calendar: Any
     chart: Chart
     rules: RuleAnalysis
     category: Category | None = None
-    useful_god_decision: UsefulGodDecision | None = None
+    perspective: str | None = None
 
 
 @dataclass(frozen=True)
@@ -152,7 +175,7 @@ class DivinationService:
         self._provider = provider
         self._rule_engine = rule_engine or RuleEngine()
 
-    def compute(self, request: DivinationRequest) -> DeterministicResult:
+    def compute(self, request: ChartRequest) -> DeterministicResult:
         calendar = build_calendar_context(
             request.calendar.year,
             request.calendar.month,
@@ -175,41 +198,32 @@ class DivinationService:
             rules=rules,
         )
 
-    def chart_response(self, request: DivinationRequest) -> ChartResponse:
+    def chart_response(self, request: ChartRequest) -> ChartResponse:
         result = self.compute(request)
         return self._chart_response(result)
 
     async def divine(self, request: DivinationRequest) -> DivinationResponse:
         result = self.compute(request)
-        selection_sources = self._retrieve_useful_god_sources()
-        selection_contexts = self._source_contexts(selection_sources)
         provider = self._get_provider()
-        decision = await self._select_useful_god(
-            request.question,
-            selection_contexts,
-            provider,
-        )
-        choice = UsefulGodChoice(
-            target=decision.target,
-            mode=decision.mode,
-            useful_relative=(
-                RuleRelative(decision.useful_relative)
-                if decision.useful_relative is not None
-                else None
-            ),
-            rationale=decision.rationale,
-            source_ids=tuple(
-                dict.fromkeys(citation.source_id for citation in decision.citations)
-            ),
+        classification = await self._classify_question(request.question, provider)
+        choice = build_useful_god_choice(
+            question=request.question,
+            useful_god=request.useful_god,
         )
         rules = self._rule_engine.analyze(
-            self._rule_context(request, result.calendar, result.chart),
+            self._rule_context(
+                request,
+                result.calendar,
+                result.chart,
+                category=classification.category,
+                perspective=classification.perspective,
+            ),
             choice,
         )
         result = replace(
             result,
-            category=Category(decision.category),
-            useful_god_decision=decision,
+            category=Category(classification.category),
+            perspective=classification.perspective,
             rules=rules,
         )
         if result.rules.useful_god.status == "unresolved":
@@ -243,28 +257,13 @@ class DivinationService:
             sources=source_outputs,
         )
 
-    async def _select_useful_god(
+    async def _classify_question(
         self,
         question: str,
-        sources: list[SourceContext],
         provider: LLMProvider,
-    ) -> UsefulGodDecision:
-        messages = build_useful_god_selection_messages(question, sources)
-        decision = await provider.generate_structured(messages, UsefulGodDecision)
-        first_validation = validate_useful_god_decision(decision, sources)
-        if first_validation.valid:
-            return decision
-
-        correction = build_correction_messages(
-            messages,
-            decision.model_dump_json(),
-            first_validation.correction_messages(),
-        )
-        decision = await provider.generate_structured(correction, UsefulGodDecision)
-        second_validation = validate_useful_god_decision(decision, sources)
-        if not second_validation.valid:
-            raise DivinationValidationError(first_validation, second_validation)
-        return decision
+    ) -> QuestionCategory:
+        messages = build_question_category_messages(question)
+        return await provider.generate_structured(messages, QuestionCategory)
 
     def get_source(self, source_id: str) -> SourceOutput | None:
         self._require_knowledge_db()
@@ -296,31 +295,6 @@ class DivinationService:
                 f"知识库不存在：{path}；请先运行 python scripts/build_knowledge_base.py"
             )
 
-    def _retrieve_useful_god_sources(self) -> tuple[ParagraphRecord, ...]:
-        self._require_knowledge_db()
-        with KnowledgeRepository.open(self._settings.KNOWLEDGE_DB_PATH) as repository:
-            paragraphs: list[ParagraphRecord] = []
-            missing_ids: list[str] = []
-            editorial_ids: list[str] = []
-            for source_id in USEFUL_GOD_SELECTION_SOURCE_IDS:
-                paragraph = repository.get_paragraph(source_id)
-                if paragraph is None:
-                    missing_ids.append(source_id)
-                elif paragraph.is_editorial:
-                    editorial_ids.append(source_id)
-                else:
-                    paragraphs.append(paragraph)
-            if missing_ids or editorial_ids:
-                details = []
-                if missing_ids:
-                    details.append(f"不存在：{', '.join(missing_ids)}")
-                if editorial_ids:
-                    details.append(f"仅为编辑按语：{', '.join(editorial_ids)}")
-                raise KnowledgeBaseUnavailable(
-                    "用神判定原文不可用（" + "；".join(details) + "）"
-                )
-            return tuple(paragraphs)
-
     def _retrieve_knowledge(self, result: DeterministicResult) -> RetrievedKnowledge:
         self._require_knowledge_db()
         category = result.category
@@ -341,7 +315,7 @@ class DivinationService:
                 fact_tags=rule_tags,
                 hexagram_name=result.chart.primary.name,
                 changed_hexagram_name=result.chart.changed.name,
-                keywords=category.value,
+                keywords=result.request.question,
                 example_query=result.request.question,
                 useful_relative=(
                     result.rules.useful_god.useful_relative.value
@@ -352,8 +326,12 @@ class DivinationService:
                 fts_limit=8,
             )
             mandatory_ids = {
-                fact.rule_source for fact in result.rules.facts
+                source_id
+                for fact in result.rules.facts
+                for source_id in fact.source_ids
             } | set(result.rules.useful_god.source_ids)
+            for evidence in result.rules.outcome_analysis.evidence:
+                mandatory_ids.update(evidence.source_ids)
             for candidate in result.rules.timing_candidates:
                 mandatory_ids.update(candidate.source_ids)
 
@@ -389,7 +367,7 @@ class DivinationService:
                 raise KnowledgeBaseUnavailable(
                     "确定性规则引用无法作为模型依据（" + "；".join(details) + "）"
                 )
-            stage_limits = {"fixed_pick": 6, "category": 8, "fact_tag": 8, "fts": 3}
+            stage_limits = {"fixed_pick": 0, "category": 12, "fact_tag": 0, "fts": 6}
             stage_counts = {stage: 0 for stage in stage_limits}
             for item in retrieved.paragraphs:
                 if len(ordered) >= 36:
@@ -417,7 +395,7 @@ class DivinationService:
                     if source_id:
                         add(repository.get_paragraph(source_id))
                 examples.append(scored)
-                if len(examples) == 1:
+                if len(examples) == 3:
                     break
             return RetrievedKnowledge(
                 sources=tuple(ordered),
@@ -431,10 +409,58 @@ class DivinationService:
     ) -> DivinationRequestContext:
         category = result.category
         assert category is not None
+        required_rule_fact_ids = {
+            fact_id
+            for evidence in result.rules.outcome_analysis.evidence
+            for fact_id in evidence.fact_ids
+        } | {
+            fact_id
+            for candidate in result.rules.timing_candidates
+            for fact_id in candidate.fact_ids
+        }
+        selected_candidate = (
+            result.rules.useful_god.candidates[0]
+            if result.rules.useful_god.candidates
+            else None
+        )
+        hidden_is_selected = (
+            selected_candidate is not None
+            and selected_candidate.role == "hidden"
+        )
+        noisy_fact_types = {
+            "LINE_ELEMENT_RELATION",
+            "BRANCH_CLASH_PAIR",
+            "BRANCH_COMBINE_PAIR",
+            "BRANCH_PUNISHMENT_PAIR",
+            "BRANCH_HARM_PAIR",
+            "DYNAMIC_LIFE_STAGE",
+            "DYNAMIC_LIFE_STAGE_EFFECT",
+            "SIX_GOD",
+            "STAR_NOBLE",
+            "STAR_LU",
+            "STAR_HORSE",
+            "STAR_HAPPINESS",
+            "YEAR_COMMAND",
+        }
+        rule_facts = [
+            fact
+            for fact in result.rules.facts
+            if fact.id in required_rule_fact_ids
+            or (
+                fact.type not in noisy_fact_types
+                and (
+                    hidden_is_selected
+                    or not (
+                        fact.type.startswith("HIDDEN_")
+                        or fact.type == "FLYING_HIDDEN_RELATION"
+                    )
+                )
+            )
+        ]
         facts = [
             self._chart_fact_context(fact) for fact in result.chart.facts
         ] + [
-            self._rule_fact_context(fact) for fact in result.rules.facts
+            self._rule_fact_context(fact) for fact in rule_facts
         ]
         source_contexts = self._source_contexts(knowledge.sources)
         timing = [
@@ -454,6 +480,7 @@ class DivinationService:
         return DivinationRequestContext(
             question=result.request.question,
             category=category.value,
+            perspective=result.perspective or "自占",
             chart_summary={
                 "calendar": result.calendar.model_dump(mode="json"),
                 "primary": result.chart.primary.model_dump(mode="json"),
@@ -461,8 +488,21 @@ class DivinationService:
                 "lines": [line.model_dump(mode="json") for line in result.chart.lines],
                 "line_order": result.chart.line_order,
             },
-            useful_god=json.dumps(useful.model_dump(mode="json"), ensure_ascii=False),
+            useful_god=self._useful_god_summary(useful),
             facts=facts,
+            decision_guardrail=result.rules.outcome_analysis.guardrail.value,
+            decision_evidence=[
+                DecisionEvidenceContext(
+                    evidence_id=evidence.id,
+                    direction=evidence.direction.value,
+                    weight=evidence.weight.value,
+                    description=evidence.description,
+                    fact_ids=list(evidence.fact_ids),
+                    source_ids=list(evidence.source_ids),
+                )
+                for evidence in result.rules.outcome_analysis.evidence
+            ],
+            decision_limitations=list(result.rules.outcome_analysis.limitations),
             timing_candidates=timing,
             sources=source_contexts,
             examples=self._example_contexts(
@@ -476,23 +516,31 @@ class DivinationService:
         summary = InputSummary(
             question=result.request.question,
             category=result.category.value if result.category else None,
+            perspective=result.perspective,
             calendar=result.calendar.local_moment.isoformat(),
         )
-        model_selected = result.useful_god_decision is not None
+        useful_god_selected = result.category is not None
         return ChartResponse(
             input_summary=summary,
             calendar=result.calendar,
             primary_hexagram=result.chart.primary,
             changed_hexagram=result.chart.changed,
             lines=result.chart.lines,
-            useful_god=rules.useful_god if model_selected else None,
+            useful_god=rules.useful_god if useful_god_selected else None,
+            outcome_analysis=(
+                rules.outcome_analysis
+                if useful_god_selected
+                else None
+            ),
             facts=result.chart.facts + rules.facts,
-            timing_candidates=rules.timing_candidates if model_selected else (),
+            timing_candidates=(
+                rules.timing_candidates if useful_god_selected else ()
+            ),
             limitations=(
                 rules.unimplemented_rules
-                if model_selected
+                if useful_god_selected
                 else (
-                    "仅排盘接口不调用模型，因此不判定用神、元忌与应期",
+                    "仅排盘接口未接收用户选择的用神，因此不判定元忌与应期",
                     *rules.unimplemented_rules,
                 )
             ),
@@ -500,9 +548,12 @@ class DivinationService:
 
     def _rule_context(
         self,
-        request: DivinationRequest,
+        request: ChartRequest,
         calendar: Any,
         chart: Chart,
+        *,
+        category: str | None = None,
+        perspective: str | None = None,
     ) -> RuleContext:
         lines = []
         for line in chart.lines:
@@ -532,6 +583,7 @@ class DivinationService:
                     is_moving=line.is_moving,
                     is_world=line.is_world,
                     is_response=line.is_response,
+                    spirit=line.spirit,
                     changed=changed,
                     hidden_spirit=hidden,
                 )
@@ -539,11 +591,13 @@ class DivinationService:
         void = calendar.day_pillar.void_branches
         return RuleContext(
             question=request.question,
+            year_branch=calendar.year_pillar.ganzhi.branch,
             month_branch=calendar.month_pillar.ganzhi.branch,
             day_stem=calendar.day_pillar.ganzhi.stem,
             day_branch=calendar.day_pillar.ganzhi.branch,
             void_branches=(void.first, void.second),
             palace_element=RuleElement(chart.primary.palace_element.value),
+            changed_palace_element=RuleElement(chart.changed.palace_element.value),
             primary_hexagram=chart.primary.name,
             changed_hexagram=chart.changed.name,
             primary_is_six_clash=chart.primary.is_six_clash,
@@ -553,6 +607,14 @@ class DivinationService:
             primary_is_wandering_soul=chart.primary.is_wandering_soul,
             primary_is_returning_soul=chart.primary.is_returning_soul,
             lines=tuple(lines),
+            category=category,
+            perspective=(
+                QuestionPerspective.SELF
+                if perspective == "自占"
+                else QuestionPerspective.PROXY
+                if perspective == "代占"
+                else None
+            ),
         )
 
     def _source_contexts(
@@ -629,6 +691,7 @@ class DivinationService:
             value=True if property_ is not None else None,
             property=property_,
             rule_source=fact.rule_source,
+            source_ids=[fact.rule_source],
             data=fact.evidence,
         )
 
@@ -662,11 +725,14 @@ class DivinationService:
         return FactContext(
             id=fact.id,
             type=fact.type,
+            layer=fact.layer.value,
+            rule_id=fact.rule_id,
             description=DivinationService._fact_description(fact),
             line=fact.line,
             value=value,
             property=property_,
             rule_source=fact.rule_source,
+            source_ids=list(fact.source_ids),
             data={
                 "value": fact.value,
                 "related_lines": list(fact.related_lines),
@@ -675,9 +741,55 @@ class DivinationService:
         )
 
     @staticmethod
+    def _useful_god_summary(useful: UsefulGodSelection) -> str:
+        """Compact JSON view of the resolved useful god for the judgement call.
+
+        ``rationale`` and ``source_ids`` are intentionally omitted. The
+        selected candidate's role and branch remain explicit so the model
+        cannot mistake a changed or hidden useful god for the visible line;
+        source paragraphs are already included through ``mandatory_ids``.
+        """
+        selected = (
+            useful.candidates[0]
+            if useful.status == "selected" and useful.candidates
+            else None
+        )
+        payload = {
+            "status": useful.status,
+            "target": useful.target,
+            "selection_mode": useful.selection_mode,
+            "useful_relative": useful.useful_relative,
+            "selected_line": useful.selected_line,
+            "selected_role": selected.role if selected is not None else None,
+            "selected_branch": selected.branch if selected is not None else None,
+            "useful_element": useful.useful_element,
+            "yuan_element": useful.yuan_element,
+            "taboo_element": useful.taboo_element,
+            "enemy_element": useful.enemy_element,
+        }
+        if len(useful.candidates) > 1:
+            payload["candidates"] = [
+                {
+                    "line": candidate.line,
+                    "role": candidate.role,
+                    "relative": candidate.relative,
+                    "branch": candidate.branch,
+                    "element": candidate.element,
+                    "selected": candidate.line == useful.selected_line,
+                }
+                for candidate in useful.candidates
+            ]
+        return json.dumps(payload, ensure_ascii=False, separators=(",", ":"))
+
+    @staticmethod
     def _fact_description(fact: Any) -> str:
-        value = json.dumps(fact.value, ensure_ascii=False)
-        evidence = json.dumps(fact.evidence, ensure_ascii=False, sort_keys=True)
+        value = json.dumps(fact.value, ensure_ascii=False, separators=(",", ":"))
+        evidence = json.dumps(
+            fact.evidence,
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+        )
         return f"结果={value}；参数={evidence}"
 
     def _source_outputs(
