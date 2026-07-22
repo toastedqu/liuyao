@@ -380,10 +380,25 @@ def test_divination_api_returns_structured_result(
     assert len(provider.calls) == 2
     llm_message = provider.calls[1][1].content
     assert len(llm_message) < 20_000
-    facts_block = llm_message.split("排盘事实标签：\n", maxsplit=1)[1].split(
+    facts_block = llm_message.split(
+        "卦象事实（按全卦、初爻至上爻归类；事实编号仅用于引用校验）：\n",
+        maxsplit=1,
+    )[1].split(
         "\n\n本卦裁决证据",
         maxsplit=1,
     )[0]
+    assert facts_block.count("- 爻体：") == 6
+    for duplicated_type in (
+        "爻之阴阳",
+        "动爻",
+        "静爻",
+        "纳甲",
+        "伏神",
+        "世爻",
+        "应爻",
+        "六神",
+    ):
+        assert f"\n- {duplicated_type}：" not in facts_block
     facts_without_ids = re.sub(r"fact-\S+", "", facts_block)
     assert re.search(r"[A-Za-z]", facts_without_ids) is None
 

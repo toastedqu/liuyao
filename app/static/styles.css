@@ -125,6 +125,50 @@ details {
   margin: 8px 0;
 }
 
+.fact-groups {
+  display: grid;
+  gap: 12px;
+  margin: 12px 0;
+}
+
+.fact-group {
+  padding: 0 14px 10px;
+  border: 1px solid #d0d7de;
+}
+
+.fact-group h4 {
+  margin: 10px 0 4px;
+}
+
+.fact-list {
+  margin: 0;
+  padding-left: 24px;
+}
+
+.fact-list li {
+  margin: 8px 0;
+}
+
+.fact-related {
+  display: block;
+  color: #57606a;
+}
+
+.fact-provenance {
+  margin: 2px 0 0;
+  color: #57606a;
+}
+
+.fact-provenance summary {
+  width: fit-content;
+  cursor: pointer;
+}
+
+.fact-empty {
+  margin: 4px 0;
+  color: #57606a;
+}
+
 .case-evidence {
   margin: 16px 0;
   padding: 0 14px 12px;

@@ -5,6 +5,23 @@ const errorBox = document.querySelector("#error");
 const result = document.querySelector("#result");
 
 const lineNames = ["初爻", "二爻", "三爻", "四爻", "五爻", "上爻"];
+const factGroupNames = ["全卦", ...lineNames];
+const factLayerOrder = {
+  chart: 0,
+  raw: 1,
+  derived: 2,
+  effective: 3,
+};
+const lineBodyFactTypes = new Set([
+  "爻之阴阳",
+  "动爻",
+  "静爻",
+  "纳甲",
+  "伏神",
+  "世爻",
+  "应爻",
+  "六神",
+]);
 const lineValues = [
   [6, "老阴 6（动，变阳）"],
   [7, "少阳 7（静）"],
@@ -333,33 +350,190 @@ function renderUsefulGod(payload) {
   ]);
 }
 
+function factGroupIndex(fact) {
+  if (fact.line === null || fact.line === undefined) return 0;
+  if (!Number.isInteger(fact.line) || fact.line < 1 || fact.line > lineNames.length) {
+    throw new Error(`无法归类事实爻位：${fact.line}`);
+  }
+  return fact.line;
+}
+
+function factLayerRank(fact) {
+  const layer = fact.layer || "chart";
+  const rank = factLayerOrder[layer];
+  if (rank === undefined) {
+    throw new Error(`无法排序事实层级：${layer}`);
+  }
+  return rank;
+}
+
+function groupedFacts(facts) {
+  const groups = factGroupNames.map(() => []);
+  facts.forEach((fact, originalIndex) => {
+    groups[factGroupIndex(fact)].push({ fact, originalIndex });
+  });
+  return groups.map((entries) =>
+    entries
+      .sort(
+        (left, right) =>
+          factLayerRank(left.fact) - factLayerRank(right.fact) ||
+          left.originalIndex - right.originalIndex
+      )
+      .map(({ fact }) => fact)
+  );
+}
+
+function relatedLineLabels(fact) {
+  return [...new Set(fact.related_lines || [])]
+    .filter((position) => position !== fact.line)
+    .map((position) => {
+      const name = lineNames[position - 1];
+      if (!name) {
+        throw new Error(`无法显示关联爻位：${position}`);
+      }
+      return name;
+    });
+}
+
+function lineBodyText(line) {
+  const parts = [
+    `${line.relative} ${line.stem}${line.branch}${line.element}`,
+    line.spirit,
+    line.is_yang ? "阳爻" : "阴爻",
+    line.is_moving ? "发动" : "安静",
+  ];
+  if (line.is_world) parts.push("世爻");
+  if (line.is_response) parts.push("应爻");
+
+  let text = parts.join("，");
+  if (line.changed) {
+    text +=
+      `；变爻：${line.changed.relative} ` +
+      `${line.changed.stem}${line.changed.branch}${line.changed.element}` +
+      `（${line.changed.is_yang ? "阳" : "阴"}）`;
+  }
+  if (line.hidden_spirit) {
+    text +=
+      `；伏神：${line.hidden_spirit.relative} ` +
+      `${line.hidden_spirit.stem}${line.hidden_spirit.branch}` +
+      `${line.hidden_spirit.element}`;
+  }
+  return text;
+}
+
+function appendFactProvenance(item, facts) {
+  const factIds = [...new Set(facts.map((fact) => fact.id).filter(Boolean))];
+  const sourceIds = [
+    ...new Set(
+      facts.flatMap((fact) =>
+        fact.source_ids?.length
+          ? fact.source_ids
+          : fact.rule_source
+            ? [fact.rule_source]
+            : []
+      )
+    ),
+  ];
+  if (!factIds.length && !sourceIds.length) return;
+
+  const provenance = document.createElement("details");
+  provenance.className = "fact-provenance";
+  const summary = document.createElement("summary");
+  summary.textContent = "查看编号与出处";
+  const metadata = document.createElement("small");
+  const entries = [];
+  if (factIds.length) {
+    entries.push(`事实编号：${factIds.join("、")}`);
+  }
+  if (sourceIds.length) {
+    entries.push(
+      `规则出处：${sourceIds.map((sourceId) => sourceLabel(sourceId)).join("、")}`
+    );
+  }
+  metadata.textContent = entries.join("；");
+  provenance.append(summary, metadata);
+  item.append(provenance);
+}
+
 function renderFacts(payload) {
   appendHeading(result, "6. 卦象事实");
-  appendTable(
-    result,
-    [
-      ["事实编号", (fact) => fact.id],
-      ["类型", (fact) => fact.type],
-      [
-        "爻位",
-        (fact) => {
-          const positions = fact.line ? [fact.line] : [];
-          if (fact.related_lines?.length) {
-            positions.push(...fact.related_lines);
-          }
-          if (positions.length) {
-            return [...new Set(positions)]
-              .map((position) => lineNames[position - 1])
-              .join("、");
-          }
-          return "全卦";
-        },
-      ],
-      ["结果", (fact) => typeof fact.value === "object" ? JSON.stringify(fact.value) : fact.value],
-      ["规则出处", (fact) => sourceLabel(fact.rule_source)],
-    ],
-    payload.facts
+  const container = document.createElement("div");
+  container.className = "fact-groups";
+  const linesByPosition = new Map(
+    payload.lines.map((line) => [line.position, line])
   );
+  if (linesByPosition.size !== lineNames.length) {
+    throw new Error("无法显示爻体：六个爻位不完整");
+  }
+
+  groupedFacts(payload.facts).forEach((facts, groupIndex) => {
+    const section = document.createElement("section");
+    section.className = "fact-group";
+    const heading = document.createElement("h4");
+    heading.textContent = factGroupNames[groupIndex];
+    section.append(heading);
+
+    if (groupIndex === 0 && !facts.length) {
+      const empty = document.createElement("p");
+      empty.className = "fact-empty";
+      empty.textContent = "无";
+      section.append(empty);
+      container.append(section);
+      return;
+    }
+
+    const list = document.createElement("ul");
+    list.className = "fact-list";
+    if (groupIndex > 0) {
+      const line = linesByPosition.get(groupIndex);
+      if (!line) {
+        throw new Error(`无法显示爻体：缺少${factGroupNames[groupIndex]}`);
+      }
+      const bodyFacts = facts.filter((fact) =>
+        lineBodyFactTypes.has(fact.type)
+      );
+      const bodyItem = document.createElement("li");
+      const bodyType = document.createElement("strong");
+      bodyType.textContent = "爻体：";
+      const bodyValue = document.createElement("span");
+      bodyValue.textContent = lineBodyText(line);
+      bodyItem.append(bodyType, bodyValue);
+      appendFactProvenance(bodyItem, bodyFacts);
+      list.append(bodyItem);
+    }
+
+    facts
+      .filter(
+        (fact) =>
+          groupIndex === 0 || !lineBodyFactTypes.has(fact.type)
+      )
+      .forEach((fact) => {
+        const item = document.createElement("li");
+        const type = document.createElement("strong");
+        type.textContent = `${fact.type}：`;
+        const value = document.createElement("span");
+        value.textContent =
+          typeof fact.value === "object"
+            ? JSON.stringify(fact.value)
+            : display(fact.value);
+        item.append(type, value);
+
+        const related = relatedLineLabels(fact);
+        if (related.length) {
+          const relation = document.createElement("small");
+          relation.className = "fact-related";
+          relation.textContent = `关联爻位：${related.join("、")}`;
+          item.append(relation);
+        }
+
+        appendFactProvenance(item, [fact]);
+        list.append(item);
+      });
+    section.append(list);
+    container.append(section);
+  });
+
+  result.append(container);
 }
 
 function renderOutcomeEvidence(payload) {

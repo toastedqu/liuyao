@@ -437,7 +437,6 @@ class DivinationService:
             "BRANCH_HARM_PAIR",
             "DYNAMIC_LIFE_STAGE",
             "DYNAMIC_LIFE_STAGE_EFFECT",
-            "SIX_GOD",
             "STAR_NOBLE",
             "STAR_LU",
             "STAR_HORSE",

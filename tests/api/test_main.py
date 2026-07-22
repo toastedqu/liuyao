@@ -33,11 +33,16 @@ def test_frontend_marks_line_order_and_has_six_groups() -> None:
     assert "useful_god: ensureUsefulGodSelector().value" in script
     assert "useful_god_line" not in script
     assert "卦例参考（不参与吉凶权重）" in script
-    assert "fact.related_lines?.length" in script
-    assert "lineNames[position - 1]" in script
+    assert "function relatedLineLabels(fact)" in script
+    assert "const factGroupNames = [\"全卦\", ...lineNames];" in script
+    assert "const lineBodyFactTypes = new Set([" in script
+    assert "function groupedFacts(facts)" in script
+    assert "function lineBodyText(line)" in script
+    assert "bodyType.textContent = \"爻体：\";" in script
     assert "function sourceLabel(sourceId)" in script
     assert "第${match[3]}段" in script
-    assert '["事实编号", (fact) => fact.id]' in script
+    assert "查看编号与出处" in script
+    assert '["事实编号", (fact) => fact.id]' not in script
 
 
 def test_unsupported_calendar_year_returns_structured_422() -> None:

@@ -29,6 +29,14 @@ from app.llm.schemas import (
 )
 
 SOURCE_TEXT = "用神旺相，诸事可成；用神休囚，诸事难成，此乃野鹤断卦总纲。"
+LINE_DATA = (
+    ("甲", "子", "水", "妻财", "青龙"),
+    ("乙", "丑", "土", "兄弟", "朱雀"),
+    ("丙", "寅", "木", "子孙", "勾陈"),
+    ("丁", "卯", "木", "父母", "螣蛇"),
+    ("戊", "辰", "土", "官鬼", "白虎"),
+    ("己", "巳", "火", "妻财", "玄武"),
+)
 
 
 @pytest.fixture
@@ -37,7 +45,54 @@ def sample_context() -> DivinationRequestContext:
         question="本次求财是否可成？",
         category="求财",
         perspective="自占",
-        chart_summary={"gua_name": "水地比", "palace": "坤宫"},
+        chart_summary={
+            "gua_name": "水地比",
+            "palace": "坤宫",
+            "lines": [
+                {
+                    "position": position,
+                    "name": ("初爻", "二爻", "三爻", "四爻", "五爻", "上爻")[
+                        position - 1
+                    ],
+                    "raw_value": 6 if position == 2 else 7,
+                    "is_yang": position % 2 == 1,
+                    "is_moving": position == 2,
+                    "spirit": spirit,
+                    "stem": stem,
+                    "branch": branch,
+                    "element": element,
+                    "relative": relative,
+                    "is_world": position == 3,
+                    "is_response": position == 6,
+                    "changed": (
+                        {
+                            "is_yang": True,
+                            "stem": "丙",
+                            "branch": "寅",
+                            "element": "木",
+                            "relative": "官鬼",
+                        }
+                        if position == 2
+                        else None
+                    ),
+                    "hidden_spirit": (
+                        {
+                            "stem": "庚",
+                            "branch": "午",
+                            "element": "火",
+                            "relative": "父母",
+                            "source_hexagram": "坤为地",
+                        }
+                        if position == 1
+                        else None
+                    ),
+                }
+                for position, (stem, branch, element, relative, spirit) in enumerate(
+                    LINE_DATA,
+                    start=1,
+                )
+            ],
+        },
         useful_god=(
             '{"selection_mode":"relative","useful_relative":"妻财",'
             '"selected_line":null}'
@@ -54,7 +109,7 @@ def sample_context() -> DivinationRequestContext:
             FactContext(
                 id="fact-0002",
                 type="MOVING",
-                description="二爻动而化退",
+                description="结果=是",
                 line=2,
                 value=True,
                 property=LineProperty.DONG,

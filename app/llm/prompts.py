@@ -8,15 +8,18 @@ paragraphs it is allowed to reason from, and nothing else.
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 import json
+from typing import Any
 
-from app.fact_display import fact_layer_label, line_name
+from app.fact_display import LINE_NAMES, line_name
 from app.fact_types import fact_type_label
 from app.llm.base import Message
 from app.llm.context import (
     DecisionEvidenceContext,
     DivinationRequestContext,
     ExampleContext,
+    FactContext,
     SourceContext,
 )
 from app.llm.schemas import DivinationConclusion, QuestionCategory
@@ -75,9 +78,10 @@ SYSTEM_PROMPT = """\
 12. 有候选卦例时，case_analysis 必须在主判断完成后作一次参考比照，role 固定为 reference_only。similarities、differences、application 每项须连接原例和本卦事实，但 application 只能说明原例的判断方法在本卦何处适用、何处不适用，不得用原例结果支持或推翻 overall。
 13. overall.outlook 必须严格服从本轮给出的“允许总体结论”：仅有利主证只能为“吉”，仅不利主证只能为“凶”，正反证据并见只能为“吉中有阻”或“凶中有救”，暂不裁决只能为“需再占”。“吉中有阻”须以有利为主且综合两侧，“凶中有救”须以不利为主且综合两侧。不得输出“平”或“不确定”，也不得因为没有完全相同的卦例改变结论集合。
 14. 输出应简明：每个分析部分只保留一至两条最关键判断，每条只引用支撑该句所必需的 fact_id 和引文，不要穷举所有事实。
-15. line_assertions 只能引用“排盘事实标签”中明确显示了“属性=”的 fact_id，且属性、爻位和布尔值必须完全一致；其他一般事实只能放在 fact_ids 中。
+15. line_assertions 只能引用“卦象事实”中明确显示了“属性=”的 fact_id，且属性、爻位和布尔值必须完全一致；其他一般事实只能放在 fact_ids 中。
 
 16. 不得把普通的主卦名、变卦名、六冲、六合、游魂、归魂，或元神/忌神“出现”本身当作吉凶证据；只有“本卦裁决证据”明确列出的有利、不利或条件性作用才可进入综合。空破、休囚、动爻也不能脱离有根无根、有力无力、元忌同动及生克多少机械贴标签。
+17. 同一爻的原始状态、推导事实与最终效力按因果顺序列出；三者并见时，必须以最终效力说明该状态实际是否发挥作用，不得把被化解或仅属名义的原始状态重复计作独立吉凶证据。
 
 如果某项细节证据不足，应把该细节列为限制；不能用自己的六爻知识弥补空白。质量控制为“暂不裁决”时只能输出“需再占”，并明确裁决层为何保留，不得伪造单向主证。
 """
@@ -89,24 +93,200 @@ def build_system_prompt(*, forbidden_terms: frozenset[str] | None = None) -> str
     return SYSTEM_PROMPT.format(forbidden_terms="、".join(sorted(terms)))
 
 
-def _render_fact(fact) -> str:
-    parts = [f"- {fact.id} [{fact_type_label(fact.type)}]"]
-    parts.append(f"层级={fact_layer_label(fact.layer)}")
-    if fact.line is not None:
-        parts.append(f"第{fact.line}爻")
-    if fact.related_lines:
+_FACT_GROUP_NAMES = ("全卦", *LINE_NAMES)
+_FACT_LAYER_ORDER = {
+    "chart": 0,
+    "raw": 1,
+    "derived": 2,
+    "effective": 3,
+}
+_LINE_BODY_FACT_TYPES = frozenset(
+    {
+        "爻之阴阳",
+        "动爻",
+        "静爻",
+        "纳甲",
+        "伏神",
+        "世爻",
+        "应爻",
+        "六神",
+    }
+)
+
+
+def _render_fact(fact: FactContext) -> str:
+    description = fact.description.removeprefix("结果=")
+    parts = [description]
+    related_lines = [
+        position for position in fact.related_lines if position != fact.line
+    ]
+    if related_lines:
         parts.append(
-            "相关爻位="
-            + "、".join(line_name(position) for position in fact.related_lines)
+            "关联爻位="
+            + "、".join(line_name(position) for position in related_lines)
         )
     if fact.property is not None:
-        # fact.value is always literally True whenever property is set
-        # (see DivinationService._chart_fact_context/_rule_fact_context), so
-        # rendering it separately would just repeat "属性=" with no new
-        # information.
         parts.append(f"属性={fact.property.value}")
-    parts.append(fact.description)
-    return " ".join(parts)
+    result = "；".join(parts)
+    return (
+        f"- {fact_type_label(fact.type)}：{result}"
+        f"〔事实编号={fact.id}〕"
+    )
+
+
+def _required_line_value(
+    line: Mapping[str, Any],
+    key: str,
+    expected_type: type,
+) -> Any:
+    value = line.get(key)
+    if type(value) is not expected_type:
+        raise ValueError(f"结构化排盘的爻体字段无效：{key}")
+    return value
+
+
+def _optional_line_object(
+    line: Mapping[str, Any],
+    key: str,
+) -> Mapping[str, Any] | None:
+    value = line.get(key)
+    if value is None:
+        return None
+    if not isinstance(value, Mapping):
+        raise ValueError(f"结构化排盘的爻体字段无效：{key}")
+    return value
+
+
+def _line_body_text(line: Mapping[str, Any]) -> str:
+    primary = (
+        f"{_required_line_value(line, 'relative', str)} "
+        f"{_required_line_value(line, 'stem', str)}"
+        f"{_required_line_value(line, 'branch', str)}"
+        f"{_required_line_value(line, 'element', str)}"
+    )
+    parts = [
+        primary,
+        _required_line_value(line, "spirit", str),
+        "阳爻" if _required_line_value(line, "is_yang", bool) else "阴爻",
+        "发动" if _required_line_value(line, "is_moving", bool) else "安静",
+    ]
+    if _required_line_value(line, "is_world", bool):
+        parts.append("世爻")
+    if _required_line_value(line, "is_response", bool):
+        parts.append("应爻")
+
+    rendered = "，".join(parts)
+    changed = _optional_line_object(line, "changed")
+    if changed is not None:
+        changed_body = (
+            f"{_required_line_value(changed, 'relative', str)} "
+            f"{_required_line_value(changed, 'stem', str)}"
+            f"{_required_line_value(changed, 'branch', str)}"
+            f"{_required_line_value(changed, 'element', str)}"
+        )
+        changed_polarity = (
+            "阳" if _required_line_value(changed, "is_yang", bool) else "阴"
+        )
+        rendered += f"；变爻：{changed_body}（{changed_polarity}）"
+
+    hidden = _optional_line_object(line, "hidden_spirit")
+    if hidden is not None:
+        hidden_body = (
+            f"{_required_line_value(hidden, 'relative', str)} "
+            f"{_required_line_value(hidden, 'stem', str)}"
+            f"{_required_line_value(hidden, 'branch', str)}"
+            f"{_required_line_value(hidden, 'element', str)}"
+        )
+        rendered += f"；伏神：{hidden_body}"
+    return rendered
+
+
+def _render_line_body(
+    line: Mapping[str, Any],
+    body_facts: list[FactContext],
+) -> str:
+    property_facts = [fact for fact in body_facts if fact.property is not None]
+    property_ids = {fact.id for fact in property_facts}
+    metadata = [
+        f"〔属性={fact.property.value}；事实编号={fact.id}〕"
+        for fact in property_facts
+        if fact.property is not None
+    ]
+    other_ids = [fact.id for fact in body_facts if fact.id not in property_ids]
+    if other_ids:
+        metadata.append(f"〔爻体事实编号={'、'.join(other_ids)}〕")
+    return f"- 爻体：{_line_body_text(line)}{''.join(metadata)}"
+
+
+def _line_bodies_by_position(
+    chart_summary: Mapping[str, Any],
+) -> dict[int, Mapping[str, Any]]:
+    lines = chart_summary.get("lines")
+    if not isinstance(lines, list) or len(lines) != len(LINE_NAMES):
+        raise ValueError("结构化排盘必须包含初爻至上爻共六个爻体")
+
+    by_position: dict[int, Mapping[str, Any]] = {}
+    for line in lines:
+        if not isinstance(line, Mapping):
+            raise ValueError("结构化排盘的爻体必须是对象")
+        position = _required_line_value(line, "position", int)
+        line_name(position)
+        if position in by_position:
+            raise ValueError(f"结构化排盘存在重复爻位：{position}")
+        by_position[position] = line
+    if set(by_position) != set(range(1, len(LINE_NAMES) + 1)):
+        raise ValueError("结构化排盘的六个爻位不完整")
+    return by_position
+
+
+def _is_line_body_fact(fact: FactContext) -> bool:
+    return (
+        fact.line is not None
+        and fact_type_label(fact.type) in _LINE_BODY_FACT_TYPES
+    )
+
+
+def _render_facts(
+    facts: list[FactContext],
+    chart_summary: Mapping[str, Any],
+) -> str:
+    grouped: list[list[tuple[int, FactContext]]] = [
+        [] for _ in _FACT_GROUP_NAMES
+    ]
+    for original_index, fact in enumerate(facts):
+        group_index = fact.line or 0
+        grouped[group_index].append((original_index, fact))
+
+    line_bodies = _line_bodies_by_position(chart_summary)
+    sections: list[str] = []
+    for group_index, (group_name, entries) in enumerate(
+        zip(_FACT_GROUP_NAMES, grouped, strict=True)
+    ):
+        entries.sort(
+            key=lambda item: (
+                _FACT_LAYER_ORDER[item[1].layer],
+                item[0],
+            )
+        )
+        if group_index == 0:
+            rendered_facts = [_render_fact(fact) for _, fact in entries]
+        else:
+            body_facts = [
+                fact for _, fact in entries if _is_line_body_fact(fact)
+            ]
+            rendered_facts = [
+                _render_line_body(line_bodies[group_index], body_facts),
+                *(
+                    _render_fact(fact)
+                    for _, fact in entries
+                    if not _is_line_body_fact(fact)
+                ),
+            ]
+        sections.append(
+            f"### {group_name}\n"
+            + ("\n".join(rendered_facts) or "- （无）")
+        )
+    return "\n\n".join(sections)
 
 
 def _render_timing_candidate(candidate) -> str:
@@ -174,7 +354,7 @@ def build_question_category_messages(
 
 def build_user_message(context: DivinationRequestContext, response_schema: type[DivinationConclusion]) -> str:
     """Serialize the full request context plus the required output schema."""
-    facts_block = "\n".join(_render_fact(f) for f in context.facts) or "（无）"
+    facts_block = _render_facts(context.facts, context.chart_summary)
     decision_block = (
         "\n".join(
             _render_decision_evidence(evidence)
@@ -211,7 +391,7 @@ def build_user_message(context: DivinationRequestContext, response_schema: type[
 结构化排盘（唯一可信的卦象事实来源，不得更改）：
 {json.dumps(context.chart_summary, ensure_ascii=False, separators=(",", ":"))}
 
-排盘事实标签：
+卦象事实（按全卦、初爻至上爻归类；事实编号仅用于引用校验）：
 {facts_block}
 
 本卦裁决证据（唯一可决定总体方向；不得把候选卦例计入）：

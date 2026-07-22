@@ -37,6 +37,7 @@ def test_system_prompt_lists_all_forbidden_actions() -> None:
     assert "不得因为没有完全相同的卦例" in prompt
     assert "明确显示了“属性=”的 fact_id" in prompt
     assert "唯一允许决定总体吉凶方向" in prompt
+    assert "必须以最终效力说明" in prompt
     assert "卦例结果影响而判凶" not in prompt
 
 
@@ -65,14 +66,28 @@ def test_build_user_message_includes_all_context_sections(sample_context) -> Non
     assert "008_用神章:p0001" in text
     assert "用神旺相" in text  # source text is inlined verbatim
     assert "模型判定问占视角：自占" in text
-    assert "[月破]" in text
-    assert "[动爻]" in text
-    assert "[MONTH_BREAK]" not in text
-    assert "[MOVING]" not in text
-    facts_block = text.split("排盘事实标签：\n", maxsplit=1)[1].split(
+    assert "月破：三爻月破" in text
+    assert "爻体：兄弟 乙丑土，朱雀，阴爻，发动" in text
+    assert "变爻：官鬼 丙寅木（阳）" in text
+    assert "属性=动；事实编号=fact-0002" in text
+    assert "动爻：是" not in text
+    assert "MONTH_BREAK" not in text
+    assert "MOVING" not in text
+    facts_block = text.split(
+        "卦象事实（按全卦、初爻至上爻归类；事实编号仅用于引用校验）：\n",
+        maxsplit=1,
+    )[1].split(
         "\n\n本卦裁决证据",
         maxsplit=1,
     )[0]
+    assert re.findall(
+        r"^### (全卦|初爻|二爻|三爻|四爻|五爻|上爻)$",
+        facts_block,
+        re.MULTILINE,
+    ) == ["全卦", "初爻", "二爻", "三爻", "四爻", "五爻", "上爻"]
+    assert next(
+        line for line in facts_block.splitlines() if "fact-0001" in line
+    ).endswith("〔事实编号=fact-0001〕")
     facts_without_ids = re.sub(r"fact-\S+", "", facts_block)
     assert re.search(r"[A-Za-z]", facts_without_ids) is None
 
@@ -91,11 +106,133 @@ def test_build_user_message_names_both_lines_in_relation_facts(
 
     text = build_user_message(context, DivinationConclusion)
 
-    assert "[爻间五行生克]" in text
-    assert "层级=原始事实层" in text
+    assert "爻间五行生克：二爻（土，动）生初爻（金，静）" in text
     assert "ZSBY" not in text
-    assert "相关爻位=初爻、二爻" in text
+    assert "关联爻位=初爻、二爻" in text
     assert "二爻（土，动）生初爻（金，静）" in text
+    global_block = text.split("### 全卦\n", maxsplit=1)[1].split(
+        "\n\n### 初爻",
+        maxsplit=1,
+    )[0]
+    assert relation.id in global_block
+    assert text.count(relation.id) == 1
+
+
+def test_build_user_message_consolidates_line_body_facts(sample_context) -> None:
+    body_facts = [
+        FactContext(
+            id="fact-polarity",
+            type="LINE_POLARITY",
+            description="结果=阳",
+            line=1,
+        ),
+        FactContext(
+            id="fact-static",
+            type="STATIC",
+            description="结果=是",
+            line=1,
+            value=True,
+            property="静",
+        ),
+        FactContext(
+            id="fact-najia",
+            type="NAJIA",
+            description="结果=甲子",
+            line=1,
+        ),
+        FactContext(
+            id="fact-spirit",
+            type="SIX_GOD",
+            layer="raw",
+            description="结果=青龙",
+            line=1,
+        ),
+        FactContext(
+            id="fact-hidden",
+            type="HIDDEN_SPIRIT",
+            description="结果=父母",
+            line=1,
+        ),
+        FactContext(
+            id="fact-month-break",
+            type="MONTH_BREAK",
+            layer="raw",
+            description="结果=月破",
+            line=1,
+        ),
+    ]
+    context = sample_context.model_copy(update={"facts": body_facts})
+
+    text = build_user_message(context, DivinationConclusion)
+    first_line_block = text.split("### 初爻\n", maxsplit=1)[1].split(
+        "\n\n### 二爻",
+        maxsplit=1,
+    )[0]
+
+    assert (
+        "爻体：妻财 甲子水，青龙，阳爻，安静；伏神：父母 庚午火"
+        in first_line_block
+    )
+    assert "属性=静；事实编号=fact-static" in first_line_block
+    assert "fact-polarity" in first_line_block
+    assert "fact-najia" in first_line_block
+    assert "fact-spirit" in first_line_block
+    assert "fact-hidden" in first_line_block
+    assert "爻之阴阳：" not in first_line_block
+    assert "静爻：" not in first_line_block
+    assert "纳甲：" not in first_line_block
+    assert "六神：" not in first_line_block
+    assert "\n- 伏神：" not in first_line_block
+    assert "月破：月破" in first_line_block
+
+
+def test_build_user_message_orders_each_line_by_fact_layer(sample_context) -> None:
+    context = sample_context.model_copy(
+        update={
+            "facts": [
+                FactContext(
+                    id="fact-effective",
+                    type="MONTH_BREAK_EFFECT",
+                    layer="effective",
+                    description="月破效力成立",
+                    line=1,
+                ),
+                FactContext(
+                    id="fact-derived",
+                    type="USEFUL_GOD",
+                    layer="derived",
+                    description="此爻为用神",
+                    line=1,
+                ),
+                FactContext(
+                    id="fact-raw",
+                    type="MONTH_BREAK",
+                    layer="raw",
+                    description="此爻月破",
+                    line=1,
+                ),
+                FactContext(
+                    id="fact-chart",
+                    type="NAJIA",
+                    description="甲子水",
+                    line=1,
+                ),
+            ]
+        }
+    )
+
+    text = build_user_message(context, DivinationConclusion)
+    first_line_block = text.split("### 初爻\n", maxsplit=1)[1].split(
+        "\n\n### 二爻",
+        maxsplit=1,
+    )[0]
+
+    assert (
+        first_line_block.index("fact-chart")
+        < first_line_block.index("fact-raw")
+        < first_line_block.index("fact-derived")
+        < first_line_block.index("fact-effective")
+    )
 
 
 def test_build_user_message_groups_worked_examples_separately(sample_context) -> None:
